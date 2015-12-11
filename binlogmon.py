@@ -1,4 +1,7 @@
 #!/usb/bin/python
+
+"""Binary log file monitoring."""
+
 import datetime
 import array
 import struct
@@ -40,6 +43,12 @@ LOG_LEVEL = logging.INFO
 
 
 def process_file(logger, file_bytes, cache_object, configuration):
+    """
+    Process the binary log file bytes.
+
+    Perform the actual reading of the file bytes and conversion
+    to an output message set.
+    """
     offset = 0
     last_reported = []
     filters = []
@@ -92,6 +101,12 @@ def process_file(logger, file_bytes, cache_object, configuration):
 
 
 def send_text(logger, message, config, dry_run):
+    """
+    Send any applicable text messages.
+
+    Uses the twilio API to send out text/sms messages for any
+    new messages read from the binary log file.
+    """
     # Account sid (the account's sid on the dash/overall page)
     account_sid = config[ACCOUNT_SID_KEY]
 
@@ -143,6 +158,11 @@ def send_text(logger, message, config, dry_run):
 
 
 def main():
+    """
+    Main entry point.
+
+    Handle logging, argument parsing, and general orchestration.
+    """
     logger = logging.getLogger('binlogmon')
     logger.setLevel(LOG_LEVEL)
     handler = logging.handlers.RotatingFileHandler('binlogmon.log',
