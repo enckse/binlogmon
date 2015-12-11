@@ -139,9 +139,16 @@ def main():
         parser = argparse.ArgumentParser(description='Parse and report any binary log messages.')
         parser.add_argument('-f', '--file', help='file name to read/parse/report from', required=True)
         parser.add_argument('--dry-run', help='run but do NOT send any messages', action='store_true', dest='dryrun')
+        parser.add_argument('--debug', help='provide debugging output', action='store_true', dest='debug')
         parser.add_argument('--config', help='configuration file', required=True)
         
         args = parser.parse_args()
+        if args.debug:
+            logger.setLevel(logging.DEBUG)
+            console_handler = logging.StreamHandler()
+            console_handler.setFormatter(formatter)
+            logger.addHandler(console_handler)
+        
         logger.info("script version %s" % VERSION_NUMBER)
         
         bytes = list()
