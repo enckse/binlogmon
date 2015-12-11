@@ -5,7 +5,7 @@ Monitor and send SMS messages out when new entries are written to a binary log f
 2. A counter that only counts up
 
 # Config
-The following config is an example of what to include in the config file passed via the CLI
+The following config is an example of what to include in the config file passed via the CLI. 'filters' and 'start' are optional.
 ```
 {
     "cache":"/path/to/cache/last/detected/last.json",

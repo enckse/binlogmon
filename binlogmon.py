@@ -157,6 +157,22 @@ def send_text(logger, message, config, dry_run):
     return True
 
 
+def check_parameter(key, configuration, default=None):
+    """
+    Check for parameters.
+
+    Check if a parameter is set.
+    If it isn't and there is a default - use default
+    else
+    that's a problem.
+    """
+    if key not in configuration:
+        if default is None:
+            raise Exception("missing required configuration item: %s" % key)
+        else:
+            configuration[key] = default
+
+
 def main():
     """
     Main entry point.
@@ -214,6 +230,21 @@ def main():
         with open(args.config, 'r') as f:
             config_file = json.loads(f.read())
             logger.debug(config_file)
+
+        check_parameter(SIZE_KEY, config_file)
+        check_parameter(START_KEY, config_file, '1970-01-01 00:00:00')
+        check_parameter(PATTERN_KEY, config_file)
+        check_parameter(MESSAGE_KEY, config_file)
+        check_parameter(TIME_KEY, config_file)
+        check_parameter(FILTER_KEY, config_file, [])
+        check_parameter(ACCOUNT_SID_KEY, config_file)
+        check_parameter(AUTH_TOKEN_KEY, config_file)
+        check_parameter(SMS_TO_KEY, config_file)
+        check_parameter(SMS_FROM_KEY, config_file)
+        check_parameter(CACHE_KEY, config_file)
+        check_parameter(LONG_MESSAGE_KEY, config_file)
+        logger.debug('final config:')
+        logger.debug(config_file)
 
         last_obj = None
         cache = config_file[CACHE_KEY]
