@@ -19,7 +19,9 @@ The following config is an example of what to include in the config file passed 
     "sid": "twilio-sid",
     "token": "twilio-auth-token",
     "sms": ["number1", "number2"],
-    "from": "from-number"
+    "from": "from-number",
+    "call": ["number1", "number3"],
+    "url": "http://some/valid/twiml/url"
 }
 ```
 
@@ -85,6 +87,16 @@ The following config is an example of what to include in the config file passed 
     "from": "from-number"
 ```
     
+* Phone numbers to call with a message
+```
+    "call": ["number1", "number3"],
+```
+
+* TwiML valid URL to pass for making the call
+```
+    "url": "http://some/valid/twiml/url"
+```
+
 # Execution
 
 ```
