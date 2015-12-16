@@ -62,7 +62,7 @@ The following config is an example of what to include in the config file passed 
     "filters":["test"],
 ```
 
-* Message text to use when more than 1 new message is detected
+* Message text to use when more than 1 new message is detected (when using 'sms')
 ```
     "long":" (and {0} more messages)"
 ```
@@ -77,7 +77,7 @@ The following config is an example of what to include in the config file passed 
     "token": "twilio-auth-token",
 ```
 
-* Phone numbers to SMS
+* Phone numbers to SMS (optional if 'call' is defined)
 ```
     "sms": ["number1", "number2"],
 ```
@@ -87,12 +87,12 @@ The following config is an example of what to include in the config file passed 
     "from": "from-number"
 ```
     
-* Phone numbers to call with a message
+* Phone numbers to call with a message (optional if 'sms' is defined)
 ```
     "call": ["number1", "number3"],
 ```
 
-* TwiML valid URL to pass for making the call
+* TwiML valid URL to pass for making the call (when using 'call')
 ```
     "url": "http://some/valid/twiml/url"
 ```
