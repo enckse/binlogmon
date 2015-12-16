@@ -155,7 +155,7 @@ def send_message(logger, message_list, config, dry_run):
     # Must be the twilio number (setup via twilio)
     from_number = config[FROM_KEY]
 
-    logger.info('sending messages')
+    logger.info('sending messages from %s' % from_number)
     if not dry_run:
         import twilio
         import twilio.rest
@@ -166,15 +166,11 @@ def send_message(logger, message_list, config, dry_run):
         item = current_object[0]
         function = current_object[1]
         try:
-            logger.info("sending message to %s" % item)
-
+            logger.info("{0} to {1}".format(function, item))
+            debug_data = ""
             if send_sms_messages and function == SMS_TO_KEY:
-                logger.info("sending sms")
-                if dry_run:
-                    print('sending {0} to {1} from {2}'.format(short_message,
-                                                               item,
-                                                               from_number))
-                else:
+                debug_data = short_message
+                if not dry_run:
                     message_object = client.messages.create(
                         body=short_message,
                         to=item,
@@ -183,12 +179,8 @@ def send_message(logger, message_list, config, dry_run):
 
                     logger.info(message_object.sid)
             if make_calls and function == CALL_KEY:
-                logger.info("calling")
-                if dry_run:
-                    print('calling {0} via {1} with {2}'.format(item,
-                                                                from_number,
-                                                                call_url))
-                else:
+                debug_data = call_url
+                if not dry_run:
                     call_object = client.calls.create(
                         to=item,
                         from_=from_number,
@@ -196,6 +188,13 @@ def send_message(logger, message_list, config, dry_run):
                     )
 
                     logger.info(call_object.sid)
+
+            if dry_run:
+                debug_message = 'from: {0}, to: {1}, ({2})'.format(from_number,
+                                                                   item,
+                                                                   debug_data)
+                logger.debug(debug_message)
+                print(debug_message)
 
             # throttle us otherwise twilio will
             if len(messaging_queue) > 1:
