@@ -14,7 +14,7 @@ import re
 import time
 from collections import deque
 
-VERSION_NUMBER = "0.1.0"
+VERSION_NUMBER = "0.1.1"
 
 __version__ = VERSION_NUMBER
 
@@ -35,6 +35,8 @@ SMS_TO_KEY = 'sms'
 FROM_KEY = 'from'
 CACHE_KEY = 'cache'
 LONG_MESSAGE_KEY = 'long'
+CALL_KEY = 'call'
+CALL_URL_KEY = 'url'
 
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 OUT_DATE = '%Y-%m-%dT%H:%M:%S'
@@ -104,7 +106,7 @@ def send_message(logger, message_list, config, dry_run):
     """
     Send any applicable messages.
 
-    Uses the twilio API to send out messages for any new messages read 
+    Uses the twilio API to send out messages for any new messages read
     from the binary log file.
     """
     # Account sid (the account's sid on the dash/overall page)
@@ -115,29 +117,40 @@ def send_message(logger, message_list, config, dry_run):
 
     # phone numbers to send messages to
     # NOTE: if using a test/trial twilio account, numbers must be 'verified'
-    key_to_use = SMS_TO_KEY
     send_sms_messages = SMS_TO_KEY in config
-    if not send_sms_messages:
-        raise Exception("No numbers configured for receiving messages")
-    else:
-        check_parameter(LONG_MESSAGE_KEY, config)
-        
-    messaging_queue = deque(config[key_to_use])
-
-    # Must be the twilio number (setup via twilio)
-    from_number = config[FROM_KEY]
-
+    make_calls = CALL_KEY in config
+    queued = {}
     short_message = None
+    call_url = None
     if send_sms_messages:
+        check_parameter(LONG_MESSAGE_KEY, config)
         long_message = config[LONG_MESSAGE_KEY]
         short_message = datetime.datetime.now().strftime(OUT_DATE)
         short_message = short_message + " - "
         short_message += message_list[0][0:SMS_LENGTH]
         if len(message_list) > 1:
             short_message += long_message.format(len(message_list) - 1)
-    
+
         logger.warn(short_message)
-    
+        for item in config[SMS_TO_KEY]:
+            logger.debug("Sending SMS to %s" % item)
+            queued[item] = SMS_TO_KEY
+
+    if make_calls:
+        check_parameter(CALL_URL_KEY, config)
+        call_url = config[CALL_URL_KEY]
+        logger.debug('using url: %s' % call_url)
+        for item in config[CALL_KEY]:
+            queued[item] = CALL_KEY
+
+    if not make_calls and not send_sms_messages:
+        raise Exception("Not configured to call or sms anyone...")
+
+    messaging_queue = deque(queued)
+
+    # Must be the twilio number (setup via twilio)
+    from_number = config[FROM_KEY]
+
     logger.info('sending messages')
     if not dry_run:
         import twilio
@@ -147,15 +160,15 @@ def send_message(logger, message_list, config, dry_run):
     while len(messaging_queue) > 0:
         item = messaging_queue.popleft()
         try:
-            logger.info("sending sms to %s" % item)
+            logger.info("sending message to %s" % item)
 
-            if dry_run:
-                logger.info('message sent')
-                print('sending {0} to {1} from {2}'.format(short_message,
-                                                           item,
-                                                           from_number))
-            else:
-                if send_sms_messages:
+            if send_sms_messages and queued[item] == SMS_TO_KEY:
+                logger.info("sending sms")
+                if dry_run:
+                    print('sending {0} to {1} from {2}'.format(short_message,
+                                                               item,
+                                                               from_number))
+                else:
                     message_object = client.messages.create(
                         body=short_message,
                         to=item,
@@ -163,6 +176,20 @@ def send_message(logger, message_list, config, dry_run):
                     )
 
                     logger.info(message_object.sid)
+            if make_calls and queued[item] == CALL_KEY:
+                logger.info("calling")
+                if dry_run:
+                    print('calling {0} via {1} with {2}'.format(item,
+                                                                from_number,
+                                                                call_url))
+                else:
+                    call_object = client.calls.create(
+                        to=item,
+                        from_=from_number,
+                        url=call_url
+                    )
+
+                    logger.info(call_object.sid)
 
             # throttle us otherwise twilio will
             if len(messaging_queue) > 1:
@@ -274,7 +301,7 @@ def main():
 
         results = process_file(logger, bytes, last_obj, config_file)
         results.sort(key=lambda x: x[OBJECT_TIME], reverse=True)
-        new_messages = []
+        messages = []
         latest_message = None
         for item in results:
             if latest_message is None:
@@ -283,10 +310,10 @@ def main():
             logger.debug(item)
             message_text = item[OBJECT_MESSAGE]
             logger.warn(message_text)
-            new_messages.append(message_text)
+            messages.append(message_text)
 
-        if len(new_messages) > 0:
-            if not send_message(logger, new_messages, config_file, args.dryrun):
+        if len(messages) > 0:
+            if not send_message(logger, messages, config_file, args.dryrun):
                 # Prevent writing out the 'latest' if this doesn't work
                 raise Exception("unable to report message out")
 
