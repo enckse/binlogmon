@@ -248,11 +248,11 @@ def main():
 
         last_obj = None
         cache = config_file[CACHE_KEY]
-        logger.info('using cache: %s' % cache)
+        logger.debug('using cache: %s' % cache)
         if os.path.exists(cache):
             with open(cache, 'r') as cache_file:
                 last_obj = json.loads(cache_file.read())
-                logger.info('reading cache in, object: ')
+                logger.debug('reading cache in, object: ')
                 logger.debug(last_obj)
 
         results = process_file(logger, bytes, last_obj, config_file)
