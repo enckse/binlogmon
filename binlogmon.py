@@ -12,6 +12,7 @@ import json
 import os
 import re
 import time
+import fcntl
 from collections import deque
 
 VERSION_NUMBER = "0.1.1"
@@ -37,6 +38,7 @@ CACHE_KEY = 'cache'
 LONG_MESSAGE_KEY = 'long'
 CALL_KEY = 'call'
 CALL_URL_KEY = 'url'
+LOCK_KEY = 'lock'
 
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 OUT_DATE = '%Y-%m-%dT%H:%M:%S'
@@ -219,6 +221,15 @@ def check_parameter(key, configuration, default=None):
             configuration[key] = default
 
 
+def file_locking(logger, do_lock, lock_file, enable):
+    """Perform a file lock operation."""
+    if do_lock:
+        logger.debug('performing lock operation where enable is %s' % enable)
+        control = fcntl.LOCK_EX if enable else fcntl.LOCK_UN
+        with open(lock_file, 'w') as fd:
+            fcntl.lockf(fd.fileno(), control)
+
+
 def main():
     """
     Main entry point.
@@ -313,9 +324,25 @@ def main():
             messages.append(message_text)
 
         if len(messages) > 0:
-            if not send_message(logger, messages, config_file, args.dryrun):
-                # Prevent writing out the 'latest' if this doesn't work
-                raise Exception("unable to report message out")
+            dry_run = args.dryrun
+            locking = LOCK_KEY in config_file
+            lock_file = None
+            if locking:
+                lock_file = config_file[LOCK_KEY]
+                if not os.path.exists(lock_file):
+                    logger.info('creating lock file %s' % lock_file)
+                    # Creating the file if it doesn't exist
+                    with open(lock_file, 'w+') as fd:
+                        fd.write('')
+            try:
+                file_locking(logger, locking, lock_file, True)
+
+                # Critical section for messaging outputs
+                if not send_message(logger, messages, config_file, dry_run):
+                    # Prevent writing out the 'latest' if this doesn't work
+                    raise Exception("unable to report message out")
+            finally:
+                file_locking(logger, locking, lock_file, False)
 
         if latest_message is not None:
             logger.info('new message detected')

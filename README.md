@@ -21,7 +21,8 @@ The following config is an example of what to include in the config file passed 
     "sms": ["number1", "number2"],
     "from": "from-number",
     "call": ["number1", "number3"],
-    "url": "http://some/valid/twiml/url"
+    "url": "http://some/valid/twiml/url",
+    "lock": "/path/to/file/to/lock"
 }
 ```
 
@@ -95,6 +96,11 @@ The following config is an example of what to include in the config file passed 
 * TwiML valid URL to pass for making the call (when using 'call')
 ```
     "url": "http://some/valid/twiml/url"
+```
+
+* Path to a file that can be used as an exclusive lock (for multiple instances running)
+```
+    "lock": "/path/to/file/to/lock"
 ```
 
 # Execution
