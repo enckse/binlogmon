@@ -32,7 +32,7 @@ FILTER_KEY = 'filters'
 ACCOUNT_SID_KEY = 'sid'
 AUTH_TOKEN_KEY = 'token'
 SMS_TO_KEY = 'sms'
-SMS_FROM_KEY = 'from'
+FROM_KEY = 'from'
 CACHE_KEY = 'cache'
 LONG_MESSAGE_KEY = 'long'
 
@@ -100,12 +100,12 @@ def process_file(logger, file_bytes, cache_object, configuration):
     return last_reported
 
 
-def send_text(logger, message, config, dry_run):
+def send_message(logger, message_list, config, dry_run):
     """
-    Send any applicable text messages.
+    Send any applicable messages.
 
-    Uses the twilio API to send out text/sms messages for any
-    new messages read from the binary log file.
+    Uses the twilio API to send out messages for any new messages read 
+    from the binary log file.
     """
     # Account sid (the account's sid on the dash/overall page)
     account_sid = config[ACCOUNT_SID_KEY]
@@ -113,45 +113,64 @@ def send_text(logger, message, config, dry_run):
     # Auth token (the account's auth token on the dash/overall page)
     auth_token = config[AUTH_TOKEN_KEY]
 
-    # phone numbers to send to
-    # if using a test/trial twilio account, numbers must be 'verified'
-    sms_queue = deque(config[SMS_TO_KEY])
+    # phone numbers to send messages to
+    # NOTE: if using a test/trial twilio account, numbers must be 'verified'
+    key_to_use = SMS_TO_KEY
+    send_sms_messages = SMS_TO_KEY in config
+    if not send_sms_messages:
+        raise Exception("No numbers configured for receiving messages")
+    else:
+        check_parameter(LONG_MESSAGE_KEY, config)
+        
+    messaging_queue = deque(config[key_to_use])
 
     # Must be the twilio number (setup via twilio)
-    sms_from = config[SMS_FROM_KEY]
+    from_number = config[FROM_KEY]
 
-    logger.info('sending text messages')
+    short_message = None
+    if send_sms_messages:
+        long_message = config[LONG_MESSAGE_KEY]
+        short_message = datetime.datetime.now().strftime(OUT_DATE)
+        short_message = short_message + " - "
+        short_message += message_list[0][0:SMS_LENGTH]
+        if len(message_list) > 1:
+            short_message += long_message.format(len(message_list) - 1)
+    
+        logger.warn(short_message)
+    
+    logger.info('sending messages')
     if not dry_run:
         import twilio
         import twilio.rest
         client = twilio.rest.TwilioRestClient(account_sid, auth_token)
 
-    while len(sms_queue) > 0:
-        item = sms_queue.popleft()
+    while len(messaging_queue) > 0:
+        item = messaging_queue.popleft()
         try:
             logger.info("sending sms to %s" % item)
 
             if dry_run:
                 logger.info('message sent')
-                print('sending {0} to {1} from {2}'.format(message,
+                print('sending {0} to {1} from {2}'.format(short_message,
                                                            item,
-                                                           sms_from))
+                                                           from_number))
             else:
-                message_object = client.messages.create(
-                    body=message,
-                    to=item,
-                    from_=sms_from
-                )
+                if send_sms_messages:
+                    message_object = client.messages.create(
+                        body=short_message,
+                        to=item,
+                        from_=from_number
+                    )
 
-                logger.info(message_object.sid)
+                    logger.info(message_object.sid)
 
             # throttle us otherwise twilio will
-            if len(sms_queue) > 1:
+            if len(messaging_queue) > 1:
                 time.sleep(1)
         except Exception as e:
             logger.warn('unable to send message to %s' % item)
             logger.error(e)
-            sms_queue.append(item)
+            messaging_queue.append(item)
 
     logger.info('messages sent')
     return True
@@ -239,10 +258,8 @@ def main():
         check_parameter(FILTER_KEY, config_file, [])
         check_parameter(ACCOUNT_SID_KEY, config_file)
         check_parameter(AUTH_TOKEN_KEY, config_file)
-        check_parameter(SMS_TO_KEY, config_file)
-        check_parameter(SMS_FROM_KEY, config_file)
+        check_parameter(FROM_KEY, config_file)
         check_parameter(CACHE_KEY, config_file)
-        check_parameter(LONG_MESSAGE_KEY, config_file)
         logger.debug('final config:')
         logger.debug(config_file)
 
@@ -268,17 +285,8 @@ def main():
             logger.warn(message_text)
             new_messages.append(message_text)
 
-        long_message = config_file[LONG_MESSAGE_KEY]
         if len(new_messages) > 0:
-            output_message = datetime.datetime.now().strftime(OUT_DATE)
-            output_message = output_message + " - "
-            output_message += new_messages[0][0:SMS_LENGTH]
-            if len(new_messages) > 1:
-                output_message += long_message.format(len(new_messages) - 1)
-
-            logger.warn(output_message)
-
-            if not send_text(logger, output_message, config_file, args.dryrun):
+            if not send_message(logger, new_messages, config_file, args.dryrun):
                 # Prevent writing out the 'latest' if this doesn't work
                 raise Exception("unable to report message out")
 
