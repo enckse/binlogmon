@@ -121,9 +121,10 @@ def send_message(logger, message_list, config, dry_run):
     # NOTE: if using a test/trial twilio account, numbers must be 'verified'
     send_sms_messages = SMS_TO_KEY in config
     make_calls = CALL_KEY in config
-    queued = {}
+    queued = []
     short_message = None
     call_url = None
+    methods = []
     if send_sms_messages:
         check_parameter(LONG_MESSAGE_KEY, config)
         long_message = config[LONG_MESSAGE_KEY]
@@ -134,17 +135,17 @@ def send_message(logger, message_list, config, dry_run):
             short_message += long_message.format(len(message_list) - 1)
 
         logger.warn(short_message)
-        for item in config[SMS_TO_KEY]:
-            logger.debug("Sending SMS to %s" % item)
-            queued[item] = SMS_TO_KEY
+        methods.append(SMS_TO_KEY)
 
     if make_calls:
         check_parameter(CALL_URL_KEY, config)
         call_url = config[CALL_URL_KEY]
         logger.debug('using url: %s' % call_url)
-        for item in config[CALL_KEY]:
-            logger.debug("Calling %s" % item)
-            queued[item] = CALL_KEY
+        methods.append(CALL_KEY)
+
+    for method in methods:
+        for item in config[method]:
+            queued.append((item, method))
 
     if not make_calls and not send_sms_messages:
         raise Exception("Not configured to call or sms anyone...")
@@ -161,11 +162,13 @@ def send_message(logger, message_list, config, dry_run):
         client = twilio.rest.TwilioRestClient(account_sid, auth_token)
 
     while len(messaging_queue) > 0:
-        item = messaging_queue.popleft()
+        current_object = messaging_queue.popleft()
+        item = current_object[0]
+        function = current_object[1]
         try:
             logger.info("sending message to %s" % item)
 
-            if send_sms_messages and queued[item] == SMS_TO_KEY:
+            if send_sms_messages and function == SMS_TO_KEY:
                 logger.info("sending sms")
                 if dry_run:
                     print('sending {0} to {1} from {2}'.format(short_message,
@@ -179,7 +182,7 @@ def send_message(logger, message_list, config, dry_run):
                     )
 
                     logger.info(message_object.sid)
-            if make_calls and queued[item] == CALL_KEY:
+            if make_calls and function == CALL_KEY:
                 logger.info("calling")
                 if dry_run:
                     print('calling {0} via {1} with {2}'.format(item,
