@@ -143,6 +143,7 @@ def send_message(logger, message_list, config, dry_run):
         call_url = config[CALL_URL_KEY]
         logger.debug('using url: %s' % call_url)
         for item in config[CALL_KEY]:
+            logger.debug("Calling %s" % item)
             queued[item] = CALL_KEY
 
     if not make_calls and not send_sms_messages:
