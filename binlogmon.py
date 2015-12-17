@@ -39,6 +39,7 @@ LONG_MESSAGE_KEY = 'long'
 CALL_KEY = 'call'
 CALL_URL_KEY = 'url'
 LOCK_KEY = 'lock'
+SHARED_KEY = 'shared'
 
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 OUT_DATE = '%Y-%m-%dT%H:%M:%S'
@@ -288,8 +289,19 @@ def main():
 
         config_file = None
         with open(args.config, 'r') as f:
+            logger.debug('loading config')
             config_file = json.loads(f.read())
             logger.debug(config_file)
+
+        if SHARED_KEY in config_file:
+            logger.debug('loading shared config')
+            with open(config_file[SHARED_KEY], 'r') as f:
+                shared_config = json.loads(f.read())
+                logger.debug(shared_config)
+
+                # Replay this 'over' the given, it overrides
+                for key in shared_config:
+                    config_file[key] = shared_config[key]
 
         check_parameter(SIZE_KEY, config_file)
         check_parameter(START_KEY, config_file, '1970-01-01 00:00:00')

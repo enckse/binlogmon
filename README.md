@@ -22,7 +22,8 @@ The following config is an example of what to include in the config file passed 
     "from": "from-number",
     "call": ["number1", "number3"],
     "url": "http://some/valid/twiml/url",
-    "lock": "/path/to/file/to/lock"
+    "lock": "/path/to/file/to/lock",
+    "shared": "/path/to/a/shared/config.json"
 }
 ```
 
@@ -30,22 +31,22 @@ The following config is an example of what to include in the config file passed 
 
 * Location to store the last detected/read message
 ```
-    "cache":"/path/to/cache/last/detected/last.json",
+    "cache":"/path/to/cache/last/detected/last.json"
 ```
 
 * The time offset (for debug/testing) in the format "YYYY-MM-DD HH:mm:SS"
 ```
-    "start":"2015-12-10 12:15:30",
+    "start":"2015-12-10 12:15:30"
 ```
 
 * Binary file message size
 ```
-    "size":1024,
+    "size":1024
 ```
 
 * Struct (python) pattern to use to unpack the binary message, it _HAS_ to produce 2 items: a message (text) and a time offset (counting up)
 ```
-    "pattern": "<5sxi",
+    "pattern": "<5sxi"
 ```
 
 * Location, from the pattern, the message text comes from
@@ -55,12 +56,12 @@ The following config is an example of what to include in the config file passed 
 
 * Location, from the pattern, the time offset comes from
 ```
-    "time":1,
+    "time":1
 ```
 
 * Any message filters to apply
 ```
-    "filters":["test"],
+    "filters":["test"]
 ```
 
 * Message text to use when more than 1 new message is detected (when using 'sms')
@@ -70,7 +71,7 @@ The following config is an example of what to include in the config file passed 
 
 * Twilio account sid
 ```
-    "sid": "twilio-sid",
+    "sid": "twilio-sid"
 ```
 
 * Twilio auth token
@@ -80,7 +81,7 @@ The following config is an example of what to include in the config file passed 
 
 * Phone numbers to SMS (optional if 'call' is defined)
 ```
-    "sms": ["number1", "number2"],
+    "sms": ["number1", "number2"]
 ```
 
 * Phone number (from Twilio) to message from
@@ -90,7 +91,7 @@ The following config is an example of what to include in the config file passed 
     
 * Phone numbers to call with a message (optional if 'sms' is defined)
 ```
-    "call": ["number1", "number3"],
+    "call": ["number1", "number3"]
 ```
 
 * TwiML valid URL to pass for making the call (when using 'call')
@@ -101,6 +102,11 @@ The following config is an example of what to include in the config file passed 
 * Path to a file that can be used as an exclusive lock (for multiple instances running)
 ```
     "lock": "/path/to/file/to/lock"
+```
+
+* Ability to use a common set of account information/numbers/etc. between multiple instances (optional)
+```
+    "shared": "/path/to/a/shared/config.json"
 ```
 
 # Execution
