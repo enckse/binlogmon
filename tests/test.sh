@@ -52,6 +52,7 @@ RM_FILE=1
 CONFIG_PREFIX="test-"
 CONFIG_POSTFIX=".json"
 LAST_JSON="last.json"
+NORMAL_MSG="$CACHE_MSG$ALL_LONG"
 
 # The 'normal' cache variables
 CACHE_DATE="2043-03-20 13:18:40"
@@ -86,6 +87,9 @@ FILTER_FILE="{
     \"filters\":[\"$CACHE_MSG\"],
     \"shared\": \"${CONFIG_PREFIX}${DEFAULT_CONFIG}${CONFIG_POSTFIX}\"
 }"
+
+PHONE_CONFIG=$(echo "$CONFIG_FILE" | grep -v "\"sms\":")
+SMS_CONFIG=$(echo "$CONFIG_FILE" | grep -v "\"call\":")
 
 # Run tests (config to use, indicator to delete cache file)
 function run-test()
@@ -162,17 +166,37 @@ function save-config()
     echo "$1" > $CONFIG_PREFIX$2$CONFIG_POSTFIX
 }
 
+# Test a single sms/phone/etc type of output (config, numbers, message)
+function single-type-test()
+{
+    results=$(run-test "$1")
+    check-content "$results" "$2" "$3" "$1"
+    normal-cache
+    if [ $(echo "$results" | grep -co "$3") -ne 2 ]; then
+        echo "FAILED: should only see outputs of type $1"
+        exit -1
+    fi
+}
+
 # Cleanup and setup before any and all tests
 rm -f *.log
 rm -f *.json
 save-config "$CONFIG_FILE" $DEFAULT_CONFIG
 save-config "$FILTER_FILE" $FILTER_CONFIG
+save-config "$PHONE_CONFIG" $PHONE
+save-config "$SMS_CONFIG" $SMS
 
 if [ $NORMAL_TESTS -eq 1 ]; then
     echo "Normal test..."
     results=$(run-test "$DEFAULT_CONFIG")
-    check-all-content "$results" "$CACHE_MSG$ALL_LONG" "$URL"
+    check-all-content "$results" "$NORMAL_MSG" "$URL"
     normal-cache
+
+    echo "Normal (call-only)..."
+    single-type-test "$PHONE" "$PHONE_NUMBER" "$URL"
+    
+    echo "Normal (sms-only)..."
+    single-type-test "$SMS" "$SMS_NUMBER" "$NORMAL_MSG"
 fi
 
 if [ $CACHE_TESTS -eq 1 ]; then
