@@ -15,7 +15,7 @@ import time
 import fcntl
 from collections import deque
 
-VERSION_NUMBER = "0.1.1"
+VERSION_NUMBER = "0.2.0"
 
 __version__ = VERSION_NUMBER
 
