@@ -301,6 +301,11 @@ def main():
 
                 # Replay this 'over' the given, it overrides
                 for key in shared_config:
+                    if key == SHARED_KEY:
+                        logger.warn("Nested config sharing is not supported")
+                        continue
+                    if key in config_file:
+                        logger.warn('%s was overriden by a shared value' % key)
                     config_file[key] = shared_config[key]
 
         check_parameter(SIZE_KEY, config_file)
