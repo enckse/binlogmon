@@ -124,7 +124,7 @@ python3 binlogmon.py -f /path/to/binary/log/file.log --config /path/to/config.js
 
 ```
 #!/bin/bash
-LOCATION=$HOME/monitoring/$NAME
+LOCATION=$HOME/$NAME
 PATH_TO_LOGS=$LOG_FILES
 
 # Share location of the log file, we'll copy it before doing any reading
