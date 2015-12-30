@@ -115,31 +115,10 @@ The following config is an example of what to include in the config file passed 
 python3 binlogmon.py -f /path/to/binary/log/file.log --config /path/to/config.json
 ```
 
-# Example
+# Wrapper
 
 * Example wrapper to manage and use the logging monitor, assuming:
     * $NAME and $LOG_FILES is set
     * Operating under a 'system' account in $HOME
     * binlogmon has been locally cloned and set
 
-```
-#!/bin/bash
-LOCATION=$HOME/$NAME
-PATH_TO_LOGS=$LOG_FILES
-
-# Share location of the log file, we'll copy it before doing any reading
-PAST_LOGS=$LOCATION/logs/
-TIMESTAMP=$(date +%s)
-LOG_COPY=$PAST_LOGS$TIMESTAMP.log
-
-# Move and update
-cd $LOCATION/binlogmon.git
-git pull &>/dev/null
-
-# Prep for actual execution
-cp $PATH_TO_ALERTS $LOG_COPY
-python3 binglogmon.py -f $LOG_COPY --config config.json
-
-# Cleanup
-find $PAST_LOGS* -mtime +7 -exec rm {} \;
-```
