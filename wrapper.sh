@@ -8,9 +8,6 @@ mkdir -p $PAST_LOGS
 TIMESTAMP=$(date +%s)
 LOG_COPY=$PAST_LOGS$TIMESTAMP.log
 
-# Assuming we're in the 'correct' place to refresh
-git pull &>/dev/null
-
 # Prep for actual execution
 cp $PATH_TO_LOGS $LOG_COPY
 python3 binlogmon.py -f $LOG_COPY --config $LOCATION/config.json
