@@ -10,3 +10,4 @@ analyze: test
 		pep257 *.py
 
 test:
+		cd tests && ./test.sh

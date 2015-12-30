@@ -1,0 +1,15 @@
+{
+    "sid": "twilio-sid",
+    "token": "twilio-auth-token",
+    "sms": ["number1", "number2"],
+    "from": "from-number",
+    "call": ["number1", "number3"],
+    "url": "http://some/valid/twiml/url",
+    "cache":"last.json",
+    "start":"2016-01-01 00:00:00",
+    "size":11,
+    "pattern": "<5sxsi",
+    "message":0,
+    "time":2,
+    "long":" (and {0} more messages)"
+}
