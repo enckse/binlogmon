@@ -145,8 +145,14 @@ def send_message(logger, message_list, config, dry_run):
         methods.append(CALL_KEY)
 
     for method in methods:
+        method_unique = []
         for item in config[method]:
+            if item in method_unique:
+                logger.warn("{0} will only message once via {1}".format(
+                    item, method))
+                continue
             queued.append((item, method))
+            method_unique.append(item)
 
     if not make_calls and not send_sms_messages:
         raise Exception("Not configured to call or sms anyone...")
