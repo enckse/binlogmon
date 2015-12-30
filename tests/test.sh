@@ -38,9 +38,14 @@ fi
 # Overall test variables
 DEFAULT_CONFIG="config"
 SHORT_SMS=")"
-URL="(http://some/valid/twiml/url)"
-SMS_NUMBER="number1 number2"
-PHONE_NUMBER="number1 number3"
+RAW_URL="http://some/valid/twiml/url"
+URL="($RAW_URL)"
+NUMBER1="number1"
+NUMBER2="number2"
+NUMBER3="number3"
+LONG_MESSAGE=" (and {0} more messages)"
+SMS_NUMBER="$NUMBER1 $NUMBER2"
+PHONE_NUMBER="$NUMBER1 $NUMBER3"
 SMS="sms"
 PHONE="phone"
 RM_FILE=1
@@ -52,7 +57,7 @@ LAST_JSON="last.json"
 CACHE_DATE="2043-03-20 13:18:40"
 CACHE_MSG="qfghi"
 CACHE_TIME="858863920"
-ALL_LONG=" (and 2 more messages)"
+ALL_LONG=$(echo "$LONG_MESSAGE" | sed -e "s/{0}/2/g")
 
 # Filter test data
 FILTER_CONFIG="filters"
@@ -64,17 +69,17 @@ FILTER_ALL_LONG=" (and 1 more messages)"
 CONFIG_FILE="{
     \"sid\": \"twilio-sid\",
     \"token\": \"twilio-auth-token\",
-    \"sms\": [\"number1\", \"number2\"],
+    \"sms\": [\"$NUMBER1\", \"$NUMBER2\"],
     \"from\": \"from-number\",
-    \"call\": [\"number1\", \"number3\"],
-    \"url\": \"http://some/valid/twiml/url\",
-    \"cache\":\"last.json\",
+    \"call\": [\"$NUMBER1\", \"$NUMBER3\"],
+    \"url\": \"$RAW_URL\",
+    \"cache\":\"$LAST_JSON\",
     \"start\":\"2016-01-01 00:00:00\",
     \"size\":11,
     \"pattern\": \"<5sxsi\",
     \"message\":0,
     \"time\":2,
-    \"long\":\" (and {0} more messages)\"
+    \"long\":\"$LONG_MESSAGE\"
 }"
 
 FILTER_FILE="{
