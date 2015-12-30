@@ -121,4 +121,4 @@ python3 binlogmon.py -f /path/to/binary/log/file.log --config /path/to/config.js
     * $NAME and $LOG_FILES is set
     * Operating under a 'system' account in $HOME
     * binlogmon has been locally cloned and set
-    * The config is called 'config.json' in the named location
+    * The config is called 'config-$NAME.json' in the named location
