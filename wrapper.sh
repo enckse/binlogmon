@@ -13,7 +13,7 @@ git pull &>/dev/null
 
 # Prep for actual execution
 cp $PATH_TO_LOGS $LOG_COPY
-python3 binglogmon.py -f $LOG_COPY --config config.json
+python3 binglogmon.py -f $LOG_COPY --config $LOCATION/config.json
 
 # Cleanup
 find $PAST_LOGS* -mtime +7 -exec rm {} \;
