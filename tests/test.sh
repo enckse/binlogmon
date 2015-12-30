@@ -44,6 +44,9 @@ PHONE_NUMBER="number1 number3"
 SMS="sms"
 PHONE="phone"
 RM_FILE=1
+CONFIG_PREFIX="test-"
+CONFIG_POSTFIX=".json"
+LAST_JSON="last.json"
 
 # The 'normal' cache variables
 CACHE_DATE="2043-03-20 13:18:40"
@@ -58,13 +61,34 @@ FILTER_CACHE_MSG="ehg"
 FILTER_CACHE_DATE="2042-09-08 03:10:40"
 FILTER_ALL_LONG=" (and 1 more messages)"
 
+CONFIG_FILE="{
+    \"sid\": \"twilio-sid\",
+    \"token\": \"twilio-auth-token\",
+    \"sms\": [\"number1\", \"number2\"],
+    \"from\": \"from-number\",
+    \"call\": [\"number1\", \"number3\"],
+    \"url\": \"http://some/valid/twiml/url\",
+    \"cache\":\"last.json\",
+    \"start\":\"2016-01-01 00:00:00\",
+    \"size\":11,
+    \"pattern\": \"<5sxsi\",
+    \"message\":0,
+    \"time\":2,
+    \"long\":\" (and {0} more messages)\"
+}"
+
+FILTER_FILE="{
+    \"filters\":[\"$CACHE_MSG\"],
+    \"shared\": \"${CONFIG_PREFIX}${DEFAULT_CONFIG}${CONFIG_POSTFIX}\"
+}"
+
 # Run tests (config to use, indicator to delete cache file)
 function run-test()
 {
     if [ -z "$2" ]; then
-        rm -f last.json
+        rm -f $LAST_JSON
     fi
-    result=$(python3 ../binlogmon.py -f test.dat --config test-$1.json --dry-run)
+    result=$(python3 ../binlogmon.py -f test.dat --config $CONFIG_PREFIX$1$CONFIG_POSTFIX --dry-run)
     echo "$result"
 }
 
@@ -82,7 +106,7 @@ function check-cache-value()
 # Check the cache value for items (time, datetime, message)
 function check-cached()
 {
-    contents=$(cat last.json)
+    contents=$(cat $LAST_JSON)
     check-cache-value "$contents" "time" "$1"
     check-cache-value "$contents" "datetime" "\"$2\""
     check-cache-value "$contents" "message" "\"$3\""    
@@ -127,38 +151,50 @@ function filter-cache()
     check-cached "$FILTER_CACHE_TIME" "$FILTER_CACHE_DATE" "$FILTER_CACHE_MSG"   
 }
 
+# Save a config file to disk (content, file name)
+function save-config()
+{
+    echo "$1" > $CONFIG_PREFIX$2$CONFIG_POSTFIX
+}
+
+# Cleanup and setup before any and all tests
+rm -f *.log
+rm -f *.json
+save-config "$CONFIG_FILE" $DEFAULT_CONFIG
+save-config "$FILTER_FILE" $FILTER_CONFIG
+
 if [ $NORMAL_TESTS -eq 1 ]; then
     echo "Normal test..."
     results=$(run-test "$DEFAULT_CONFIG")
-    normal-cache
     check-all-content "$results" "$CACHE_MSG$ALL_LONG" "$URL"
+    normal-cache
 fi
 
 if [ $CACHE_TESTS -eq 1 ]; then
     echo "Cache test..."
     results=$(run-test "config" $RM_FILE)
-    normal-cache
     if [[ "$results" != "" ]]; then
         echo "FAILED - result should be empty"
         exit -1
     fi
+    normal-cache
     
-    sed -i -- "s/$CACHE_TIME/$((CACHE_TIME - 1))/g" last.json
+    sed -i -- "s/$CACHE_TIME/$((CACHE_TIME - 1))/g" $LAST_JSON
     echo "Cache test partial..."
     results=$(run-test "config" $RM_FILE)
-    normal-cache
     check-all-content "$results" "$CACHE_MSG$SHORT_SMS" "$URL"
+    normal-cache
 fi
 
 if [ $FILTER_TESTS -eq 1 ]; then
     echo "Filter test..."
     results=$(run-test "$FILTER_CONFIG")
-    filter-cache
     check-all-content "$results" "$FILTER_CACHE_MSG$FILTER_ALL_LONG" "$URL"
+    filter-cache
 
-    sed -i -- "s/$FILTER_CACHE_TIME/$((FILTER_CACHE_TIME - 1))/g" last.json
+    sed -i -- "s/$FILTER_CACHE_TIME/$((FILTER_CACHE_TIME - 1))/g" $LAST_JSON
     echo "Filter cache test partial..."
     results=$(run-test "$FILTER_CONFIG" $RM_FILE)
-    filter-cache
     check-all-content "$results" "$FILTER_CACHE_MSG$SHORT_SMS" "$URL"
+    filter-cache
 fi
