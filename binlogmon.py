@@ -246,6 +246,9 @@ def main():
 
     Handle logging, argument parsing, and general orchestration.
     """
+    logger = logging.getLogger('binlogmon')
+    logger.setLevel(LOG_LEVEL)
+    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
     exit_code = -1
     try:
         parser = argparse.ArgumentParser(
@@ -269,12 +272,9 @@ def main():
                             default='binlogmon.log')
 
         args = parser.parse_args()
-        logger = logging.getLogger('binlogmon')
-        logger.setLevel(LOG_LEVEL)
         handler = logging.handlers.RotatingFileHandler(args.log,
                                                        maxBytes=10*1024*1024,
                                                        backupCount=10)
-        formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
         handler.setFormatter(formatter)
         logger.addHandler(handler)
         if args.debug:
