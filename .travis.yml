@@ -9,3 +9,7 @@ install:
     - pip install pep8 pep257 --use-mirrors
 
 script: make analyze
+
+branches:
+    only:
+        - master
