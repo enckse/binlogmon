@@ -40,6 +40,7 @@ CALL_KEY = 'call'
 CALL_URL_KEY = 'url'
 LOCK_KEY = 'lock'
 SHARED_KEY = 'shared'
+OVERRIDE_KEY = 'override'
 
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 OUT_DATE = '%Y-%m-%dT%H:%M:%S'
@@ -307,6 +308,9 @@ def main():
             with open(config_file[SHARED_KEY], 'r') as f:
                 shared_config = json.loads(f.read())
                 logger.debug(shared_config)
+                do_override = True
+                if OVERRIDE_KEY in config_file:
+                    do_override = config_file[OVERRIDE_KEY]
 
                 # Replay this 'over' the given, it overrides
                 for key in shared_config:
@@ -314,7 +318,12 @@ def main():
                         logger.warn("Nested config sharing is not supported")
                         continue
                     if key in config_file:
-                        logger.warn('%s was overriden by a shared value' % key)
+                        logger.warn('%s has multiple values' % key)
+                        if do_override:
+                            logger.warn("using child")
+                            continue
+                        else:
+                            logger.warn("using parent")
                     config_file[key] = shared_config[key]
 
         check_parameter(SIZE_KEY, config_file)

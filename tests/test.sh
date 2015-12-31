@@ -11,11 +11,13 @@ ARGS=$1
 CACHE_TESTS=0
 FILTER_TESTS=0
 NORMAL_TESTS=0
+OVERRIDE_TESTS=0
 
 if [ -z "$ARGS" ]; then
     CACHE_TESTS=1
     FILTER_TESTS=1
     NORMAL_TESTS=1
+    OVERRIDE_TESTS=1
 else
     case $ARGS in
         "--filter")
@@ -27,6 +29,9 @@ else
             ;;
         "--normal")
             NORMAL_TESTS=1
+            ;;
+        "--override")
+            OVERRIDE_TESTS=1
             ;;
         *)
             echo "Unknown argument: $ARGS"
@@ -58,6 +63,7 @@ NORMAL_MSG="$CACHE_MSG$ALL_LONG"
 CACHE_DATE="2043-03-20 13:18:40"
 CACHE_MSG="qfghi"
 CACHE_TIME="858863920"
+NORMAL_FROM="from-number"
 ALL_LONG=$(echo "$LONG_MESSAGE" | sed -e "s/{0}/2/g")
 
 # Filter test data
@@ -67,11 +73,20 @@ FILTER_CACHE_MSG="ehg"
 FILTER_CACHE_DATE="2042-09-08 03:10:40"
 FILTER_ALL_LONG=" (and 1 more messages)"
 
+# Override testing
+OVERRIDE_ALT="alternative-num"
+OVERRIDE_CONFIG="override"
+
+function get-config-name()
+{
+    echo ${CONFIG_PREFIX}$1${CONFIG_POSTFIX}
+}
+
 CONFIG_FILE="{
     \"sid\": \"twilio-sid\",
     \"token\": \"twilio-auth-token\",
     \"sms\": [\"$NUMBER1\", \"$NUMBER2\"],
-    \"from\": \"from-number\",
+    \"from\": \"$NORMAL_FROM\",
     \"call\": [\"$NUMBER1\", \"$NUMBER3\"],
     \"url\": \"$RAW_URL\",
     \"cache\":\"$LAST_JSON\",
@@ -85,7 +100,13 @@ CONFIG_FILE="{
 
 FILTER_FILE="{
     \"filters\":[\"$CACHE_MSG\"],
-    \"shared\": \"${CONFIG_PREFIX}${DEFAULT_CONFIG}${CONFIG_POSTFIX}\"
+    \"shared\": \"$(get-config-name $DEFAULT_CONFIG)\"
+}"
+
+OVERRIDE_FILE="{
+    \"from\": \"$OVERRIDE_ALT\",
+    \"override\": false,
+    \"shared\": \"$(get-config-name $DEFAULT_CONFIG)\"
 }"
 
 PHONE_CONFIG=$(echo "$CONFIG_FILE" | grep -v "\"sms\":")
@@ -97,7 +118,7 @@ function run-test()
     if [ -z "$2" ]; then
         rm -f $LAST_JSON
     fi
-    result=$(python3 ../binlogmon.py -f test.dat --config $CONFIG_PREFIX$1$CONFIG_POSTFIX --dry-run)
+    result=$(python3 ../binlogmon.py -f test.dat --config $(get-config-name $1) --dry-run)
     echo "$result"
 }
 
@@ -163,7 +184,7 @@ function filter-cache()
 # Save a config file to disk (content, file name)
 function save-config()
 {
-    echo "$1" > $CONFIG_PREFIX$2$CONFIG_POSTFIX
+    echo "$1" > $(get-config-name $2)
 }
 
 # Test a single sms/phone/etc type of output (config, numbers, message)
@@ -178,6 +199,18 @@ function single-type-test()
     fi
 }
 
+# Override test (from)
+function override-test()
+{
+    results=$(run-test "$OVERRIDE_CONFIG")
+    check-all-content "$results" "$NORMAL_MSG" "$URL"
+    normal-cache
+    if [ $(echo "$results" | grep -co "$1") -ne 4 ]; then
+        echo "FAILED: should only see numbers from $1"
+        exit -1
+    fi
+}
+
 # Cleanup and setup before any and all tests
 rm -f *.log
 rm -f *.json
@@ -185,6 +218,7 @@ save-config "$CONFIG_FILE" $DEFAULT_CONFIG
 save-config "$FILTER_FILE" $FILTER_CONFIG
 save-config "$PHONE_CONFIG" $PHONE
 save-config "$SMS_CONFIG" $SMS
+save-config "$OVERRIDE_FILE" $OVERRIDE_CONFIG
 
 if [ $NORMAL_TESTS -eq 1 ]; then
     echo "Normal test..."
@@ -226,4 +260,13 @@ if [ $FILTER_TESTS -eq 1 ]; then
     results=$(run-test "$FILTER_CONFIG" $RM_FILE)
     check-all-content "$results" "$FILTER_CACHE_MSG$SHORT_SMS" "$URL"
     filter-cache
+fi
+
+if [ $OVERRIDE_TESTS -eq 1 ]; then
+    echo "Override test (normal)..."
+    override-test "$NORMAL_FROM"
+    
+    sed -i -- "s/false/true/g" $(get-config-name $OVERRIDE_CONFIG)
+    echo "Override test..."
+    override-test "$OVERRIDE_ALT"
 fi

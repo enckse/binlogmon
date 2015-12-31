@@ -27,7 +27,8 @@ The following config is an example of what to include in the config file passed 
     "call": ["number1", "number3"],
     "url": "http://some/valid/twiml/url",
     "lock": "/path/to/file/to/lock",
-    "shared": "/path/to/a/shared/config.json"
+    "shared": "/path/to/a/shared/config.json",
+    "override" false
 }
 ```
 
@@ -111,6 +112,11 @@ The following config is an example of what to include in the config file passed 
 * Ability to use a common set of account information/numbers/etc. between multiple instances (optional)
 ```
     "shared": "/path/to/a/shared/config.json"
+```
+
+* Control whether to use a shared config's value (parent) or not (child) - true for child
+```
+    "override" false
 ```
 
 # Execution
