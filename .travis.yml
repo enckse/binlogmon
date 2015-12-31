@@ -6,7 +6,7 @@ python:
     - nightly
 
 install:
-    - pip install pep8 pep257 --use-mirrors
+    - pip install pep8 pep257
 
 script: make analyze
 
