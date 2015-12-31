@@ -5,4 +5,7 @@ python:
     - 3.5
     - nightly
 
-script: make test
+install:
+    - pip install pep8 pep257 --use-mirrors
+
+script: make analyze
