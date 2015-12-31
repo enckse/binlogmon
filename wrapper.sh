@@ -10,7 +10,7 @@ LOG_COPY=$PAST_LOGS$TIMESTAMP.log
 
 # Prep for actual execution
 cp $PATH_TO_LOGS $LOG_COPY
-python3 binlogmon.py -f $LOG_COPY --config $LOCATION/config-$NAME.json
+python3 binlogmon.py -f $LOG_COPY --config $LOCATION/config-$NAME.json --log $LOCATION/log-$NAME.log
 
 # Cleanup
 find $PAST_LOGS* -mtime +7 -exec rm {} \;
