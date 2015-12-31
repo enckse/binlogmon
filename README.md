@@ -1,8 +1,12 @@
 binlogmon
 =========
 Monitor and send SMS messages out when new entries are written to a binary log file. It requires 2 major components in the binary file to be useful:
+
 1. A message (to send)
+
 2. A counter that only counts up
+
+[![Build Status](https://travis-ci.org/epiphyte/binlogmon.svg?branch=master)
 
 # Config
 The following config is an example of what to include in the config file passed via the CLI. 'filters' and 'start' are optional.
