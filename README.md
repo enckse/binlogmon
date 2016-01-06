@@ -29,28 +29,7 @@ binlogmon -f /path/to/binary/log/file.log --config /path/to/config.json
 ```
 
 # Config
-The following config is an example of what to include in the config file passed via the CLI. 'filters' and 'start' are optional.
-```
-{
-    "cache":"/path/to/cache/last/detected/last.json",
-    "start":"2015-12-10 12:15:30",
-    "size":1024,
-    "pattern": "<5sxi",
-    "message":0,
-    "time":1,
-    "filters":["test"],
-    "long":" (and {0} more messages)",
-    "sid": "twilio-sid",
-    "token": "twilio-auth-token",
-    "sms": ["number1", "number2"],
-    "from": "from-number",
-    "call": ["number1", "number3"],
-    "url": "http://some/valid/twiml/url",
-    "lock": "/path/to/file/to/lock",
-    "shared": "/path/to/a/shared/config.json",
-    "override" false
-}
-```
+An example config file "example.json" is in the root, the breakdown is below
 
 ## Config (detail)
 
