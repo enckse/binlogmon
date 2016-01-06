@@ -115,7 +115,7 @@ An example config file "example.json" is in the root, the breakdown is below
 
 * Control whether to use a shared config's value (parent) or not (child) - true for child
 ```
-    "override" false
+    "override": false
 ```
 
 # Wrapper
@@ -124,6 +124,5 @@ An example config file "example.json" is in the root, the breakdown is below
     * Setup has been run and binlogmon is in $PATH
     * $NAME and $LOG_FILES are set
     * Operating under a 'system' account in $HOME
-    * binlogmon has been locally cloned and set
     * The config is called 'config-$NAME.json' in the named location
     * Logging will be done to a log-$NAME.log file
