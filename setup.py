@@ -1,5 +1,6 @@
 #!/usb/bin/python
 
+"""Setup for binlogmon."""
 
 from setuptools import setup, find_packages
 import binlogmon
