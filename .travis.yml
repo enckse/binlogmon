@@ -6,9 +6,9 @@ python:
 
 install:
     - pip install pep8 pep257
+    - pip install .
 
 script: 
-    - python setup.py install
     - pep8 *.py
     - pep257 * py
     - cd tests && ./test.sh

@@ -9,9 +9,17 @@ Monitor and send SMS messages out when new entries are written to a binary log f
 [![Build Status](https://travis-ci.org/epiphyte/binlogmon.svg?branch=master)](https://travis-ci.org/epiphyte/binlogmon)
 
 # Install
-
+* Clone this repository and run something to one of the following depending on system configuration:
 ```
 python setup.py install
+```
+or
+```
+pip install .
+```
+or
+```
+pip install -e .
 ```
 
 # Usage
