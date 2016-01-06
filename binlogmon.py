@@ -41,6 +41,7 @@ CALL_URL_KEY = 'url'
 LOCK_KEY = 'lock'
 SHARED_KEY = 'shared'
 OVERRIDE_KEY = 'override'
+MAX_ITEM_FAILURES = 100
 
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 OUT_DATE = '%Y-%m-%dT%H:%M:%S'
@@ -169,6 +170,7 @@ def send_message(logger, message_list, config, dry_run):
         import twilio.rest
         client = twilio.rest.TwilioRestClient(account_sid, auth_token)
 
+    failures = {}
     while len(messaging_queue) > 0:
         current_object = messaging_queue.popleft()
         item = current_object[0]
@@ -211,6 +213,13 @@ def send_message(logger, message_list, config, dry_run):
             logger.warn('unable to send message to %s' % item)
             logger.error(e)
             messaging_queue.append(item)
+            fail_key = item + " -> " + function
+            if fail_key not in failures:
+                failures[fail_key] = 0
+            failures[fail_key] += 1
+            if failures[fail_key] > MAX_ITEM_FAILURES:
+                logger.error("max failures reached {0}".format(fail_key))
+                return False
 
     logger.info('messages sent')
     return True
