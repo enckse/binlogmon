@@ -14,6 +14,11 @@ Monitor and send SMS messages out when new entries are written to a binary log f
 python setup.py install
 ```
 
+# Usage
+
+```
+binlogmon -f /path/to/binary/log/file.log --config /path/to/config.json
+```
 
 # Config
 The following config is an example of what to include in the config file passed via the CLI. 'filters' and 'start' are optional.
@@ -124,12 +129,6 @@ The following config is an example of what to include in the config file passed 
 * Control whether to use a shared config's value (parent) or not (child) - true for child
 ```
     "override" false
-```
-
-# Execution
-
-```
-python3 binlogmon.py -f /path/to/binary/log/file.log --config /path/to/config.json
 ```
 
 # Wrapper
