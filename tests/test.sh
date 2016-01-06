@@ -118,7 +118,7 @@ function run-test()
     if [ -z "$2" ]; then
         rm -f $LAST_JSON
     fi
-    result=$(python3 ../binlogmon.py -f test.dat --config $(get-config-name $1) --dry-run)
+    result=$(binlogmon -f test.dat --config $(get-config-name $1) --dry-run)
     echo "$result"
 }
 

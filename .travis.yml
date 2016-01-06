@@ -6,8 +6,12 @@ python:
 
 install:
     - pip install pep8 pep257
+    - pip install -e .
 
-script: make analyze
+script: 
+    - pep8 *.py
+    - pep257 * py
+    - cd tests && ./test.sh
 
 branches:
     only:

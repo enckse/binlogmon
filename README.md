@@ -8,6 +8,26 @@ Monitor and send SMS messages out when new entries are written to a binary log f
 
 [![Build Status](https://travis-ci.org/epiphyte/binlogmon.svg?branch=master)](https://travis-ci.org/epiphyte/binlogmon)
 
+# Install
+* Clone this repository and run something to one of the following depending on system configuration:
+```
+python setup.py install
+```
+or
+```
+pip install .
+```
+or
+```
+pip install -e .
+```
+
+# Usage
+
+```
+binlogmon -f /path/to/binary/log/file.log --config /path/to/config.json
+```
+
 # Config
 The following config is an example of what to include in the config file passed via the CLI. 'filters' and 'start' are optional.
 ```
@@ -119,16 +139,11 @@ The following config is an example of what to include in the config file passed 
     "override" false
 ```
 
-# Execution
-
-```
-python3 binlogmon.py -f /path/to/binary/log/file.log --config /path/to/config.json
-```
-
 # Wrapper
 
 * Example wrapper to manage and use the logging monitor, assuming:
-    * $NAME and $LOG_FILES is set
+    * Setup has been run and binlogmon is in $PATH
+    * $NAME and $LOG_FILES are set
     * Operating under a 'system' account in $HOME
     * binlogmon has been locally cloned and set
     * The config is called 'config-$NAME.json' in the named location
