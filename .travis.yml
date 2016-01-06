@@ -6,7 +6,7 @@ python:
 
 install:
     - pip install pep8 pep257
-    - pip install .
+    - pip install -e .
 
 script: 
     - pep8 *.py
