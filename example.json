@@ -15,5 +15,5 @@
     "url": "http://some/valid/twiml/url",
     "lock": "/path/to/file/to/lock",
     "shared": "/path/to/a/shared/config.json",
-    "override" false
+    "override": false
 }
