@@ -212,8 +212,8 @@ def send_message(logger, message_list, config, dry_run):
         except Exception as e:
             logger.warn('unable to send message to %s' % item)
             logger.error(e)
-            messaging_queue.append(item)
-            fail_key = item + " -> " + function
+            messaging_queue.append(current_object)
+            fail_key = "{0} ({1})".format(item, function)
             if fail_key not in failures:
                 failures[fail_key] = 0
             failures[fail_key] += 1
