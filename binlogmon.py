@@ -280,6 +280,9 @@ def main():
         parser.add_argument('--log',
                             help='log file',
                             default='binlogmon.log')
+        parser.add_argument('--version',
+                            action='version',
+                            version='%(prog)s {0}'.format(VERSION_NUMBER))
 
         args = parser.parse_args()
         handler = logging.handlers.RotatingFileHandler(args.log,
