@@ -357,8 +357,8 @@ def main():
         if os.path.exists(cache):
             with open(cache, 'r') as cache_file:
                 last_obj = json.loads(cache_file.read())
-                logger.debug('reading cache in, object: ')
-                logger.debug(last_obj)
+                logger.info('reading cache in, object: ')
+                logger.info(last_obj)
 
         results = process_file(logger, bytes, last_obj, config_file)
         results.sort(key=lambda x: x[OBJECT_TIME], reverse=True)
@@ -396,9 +396,10 @@ def main():
 
         if latest_message is not None:
             logger.info('new message detected')
-            logger.debug(latest_message)
+            last_json = json.dumps(latest_message)
+            logger.info(last_json)
             with open(cache, 'w') as cache_write:
-                cache_write.write(json.dumps(latest_message))
+                cache_write.write(last_json)
 
         exit_code = 0
     except Exception as e:
