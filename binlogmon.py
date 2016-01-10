@@ -396,9 +396,10 @@ def main():
 
         if latest_message is not None:
             logger.info('new message detected')
-            logger.info(latest_message)
+            last_json = json.dumps(latest_message)
+            logger.info(last_json)
             with open(cache, 'w') as cache_write:
-                cache_write.write(json.dumps(latest_message))
+                cache_write.write(last_json)
 
         exit_code = 0
     except Exception as e:
