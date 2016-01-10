@@ -396,7 +396,7 @@ def main():
 
         if latest_message is not None:
             logger.info('new message detected')
-            logger.debug(latest_message)
+            logger.info(latest_message)
             with open(cache, 'w') as cache_write:
                 cache_write.write(json.dumps(latest_message))
 
