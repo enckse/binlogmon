@@ -107,106 +107,191 @@ def process_file(logger, file_bytes, cache_object, configuration):
     return last_reported
 
 
+class Message(object):
+    """Base implementation for sending messages out."""
+
+    def __init__(self):
+        """Initialize the instance."""
+        self.method = None
+        self.logger = None
+
+    def initialize(self, message_list, config, logger):
+        """
+        Initialize the message from the configuration.
+
+        message_list - new messages from the binary input file
+        config - the configuration definition
+        logger - the logger object
+        """
+        raise Exception("base class can _NOT_ be initialized")
+
+    def get_output_calls(self):
+        """Get the output calls to make to send messages outward."""
+        raise Exception("base class has _NO_ outputs")
+
+
+class TwilioMessage(Message):
+    """Twilio-backed messaging."""
+
+    def __init__(self):
+        """Initialize the instance."""
+        self.sid = None
+        self.token = None
+        self.from_number = None
+        self.to_numbers = None
+        self.client = None
+
+    def _init(self, config, logger):
+        """Initialize the common Twilio settings."""
+        self.logger = logger
+        # Account sid (the account's sid on the dash/overall page)
+        self.sid = config[ACCOUNT_SID_KEY]
+        # Auth token (the account's auth token on the dash/overall page)
+        self.token = config[AUTH_TOKEN_KEY]
+        # NOTE: numbers must be 'verified'
+        self.from_number = config[FROM_KEY]
+        self.to_numbers = set(config[self.method])
+
+    def get_output_calls(self):
+        """Inherited from base."""
+        self.logger.info('sending messages from %s' % self.from_number)
+        for item in self.to_numbers:
+            def call(dry_run, obj, send_to):
+                if dry_run:
+                    self._dry_run_message(send_to)
+                else:
+                    if obj.client is None:
+                        import twilio
+                        import twilio.rest
+                        obj.client = twilio.rest.TwilioRestClient(self.sid,
+                                                                  self.token)
+                    result = obj.execute()
+                    logger.debug(result.sid)
+
+            yield (item, self.method, call, self)
+
+    def _execute(self):
+        raise Exception("base twilio _MOST_ support execute")
+
+    def _dry_run_message(self, to_number):
+        dry_run_msg = self._get_dry_run_message()
+        debug_message = 'from: {0}, to: {1}, ({2})'.format(self.from_number,
+                                                           to_number,
+                                                           dry_run_msg)
+        self.logger.debug(debug_message)
+        print(debug_message)
+
+    def _get_dry_run_message(self):
+        raise Exception("base twilio _MUST_ support dry-run")
+
+
+class TwilioCall(TwilioMessage):
+    """Twilio phone calls."""
+
+    def __init__(self):
+        """Initialize the instance."""
+        self.call_url = None
+
+    def initialize(self, message_list, config, logger):
+        """Inherited from base."""
+        self.method = CALL_KEY
+        self._init(config, logger)
+        check_parameter(CALL_URL_KEY, config)
+        self.call_url = config[CALL_URL_KEY]
+        self.logger.debug('using url: %s' % self.call_url)
+
+    def _execute(self):
+        """Inherited from base."""
+        call_object = client.calls.create(
+            to=item,
+            from_=from_number,
+            url=call_url
+        )
+
+        return call_object
+
+    def _get_dry_run_message(self):
+        """Inherited from base."""
+        return self.call_url
+
+
+class TwilioSMS(TwilioMessage):
+    """Twilio SMS."""
+
+    def __init__(self):
+        """Initialize the instance."""
+        self.short_message = None
+
+    def initialize(self, message_list, config, logger):
+        """Inherited from base."""
+        self.method = SMS_TO_KEY
+        self._init(config, logger)
+        check_parameter(LONG_MESSAGE_KEY, config)
+        long_message = config[LONG_MESSAGE_KEY]
+        self.short_message = datetime.datetime.now().strftime(OUT_DATE)
+        self.short_message = self.short_message + " - "
+        self.short_message += message_list[0][0:SMS_LENGTH]
+        if len(message_list) > 1:
+            self.short_message += long_message.format(len(message_list) - 1)
+
+        self.logger.warn(self.short_message)
+
+    def _execute(self):
+        """Inherited from base."""
+        message_object = client.messages.create(
+            body=short_message,
+            to=item,
+            from_=from_number
+        )
+
+        return message_object
+
+    def _get_dry_run_message(self):
+        """Inherited from base."""
+        return self.short_message
+
+
 def send_message(logger, message_list, config, dry_run):
     """
     Send any applicable messages.
 
-    Uses the twilio API to send out messages for any new messages read
+    Uses the configured API to send out messages for any new messages read
     from the binary log file.
     """
-    # Account sid (the account's sid on the dash/overall page)
-    account_sid = config[ACCOUNT_SID_KEY]
-
-    # Auth token (the account's auth token on the dash/overall page)
-    auth_token = config[AUTH_TOKEN_KEY]
-
-    # phone numbers to send messages to
-    # NOTE: if using a test/trial twilio account, numbers must be 'verified'
-    send_sms_messages = SMS_TO_KEY in config
-    make_calls = CALL_KEY in config
     queued = []
-    short_message = None
-    call_url = None
-    methods = []
-    if send_sms_messages:
-        check_parameter(LONG_MESSAGE_KEY, config)
-        long_message = config[LONG_MESSAGE_KEY]
-        short_message = datetime.datetime.now().strftime(OUT_DATE)
-        short_message = short_message + " - "
-        short_message += message_list[0][0:SMS_LENGTH]
-        if len(message_list) > 1:
-            short_message += long_message.format(len(message_list) - 1)
+    raw_methods = []
+    valid_method = False
+    if SMS_TO_KEY in config:
+        valid_method = True
+        raw_methods.append(TwilioSMS)
 
-        logger.warn(short_message)
-        methods.append(SMS_TO_KEY)
+    if CALL_KEY in config:
+        valid_method = True
+        raw_methods.append(TwilioCall)
 
-    if make_calls:
-        check_parameter(CALL_URL_KEY, config)
-        call_url = config[CALL_URL_KEY]
-        logger.debug('using url: %s' % call_url)
-        methods.append(CALL_KEY)
+    if not valid_method:
+        raise Exception("Not configured to message anyone...")
 
-    for method in methods:
-        method_unique = []
-        for item in config[method]:
-            if item in method_unique:
-                logger.warn("{0} will only message once via {1}".format(
-                    item, method))
-                continue
-            queued.append((item, method))
-            method_unique.append(item)
-
-    if not make_calls and not send_sms_messages:
-        raise Exception("Not configured to call or sms anyone...")
+    queued = []
+    for raw in raw_methods:
+        method = raw()
+        method.initialize(message_list, config, logger)
+        for item in method.get_output_calls():
+            queued.append(item)
 
     messaging_queue = deque(queued)
-
-    # Must be the twilio number (setup via twilio)
-    from_number = config[FROM_KEY]
-
-    logger.info('sending messages from %s' % from_number)
-    if not dry_run:
-        import twilio
-        import twilio.rest
-        client = twilio.rest.TwilioRestClient(account_sid, auth_token)
-
     failures = {}
     while len(messaging_queue) > 0:
         current_object = messaging_queue.popleft()
         item = current_object[0]
         function = current_object[1]
+        callback = current_object[2]
+        obj = current_object[3]
         try:
             logger.info("{0} to {1}".format(function, item))
-            debug_data = ""
-            if send_sms_messages and function == SMS_TO_KEY:
-                debug_data = short_message
-                if not dry_run:
-                    message_object = client.messages.create(
-                        body=short_message,
-                        to=item,
-                        from_=from_number
-                    )
+            callback(dry_run, obj, item)
 
-                    logger.info(message_object.sid)
-            if make_calls and function == CALL_KEY:
-                debug_data = call_url
-                if not dry_run:
-                    call_object = client.calls.create(
-                        to=item,
-                        from_=from_number,
-                        url=call_url
-                    )
-
-                    logger.info(call_object.sid)
-
-            if dry_run:
-                debug_message = 'from: {0}, to: {1}, ({2})'.format(from_number,
-                                                                   item,
-                                                                   debug_data)
-                logger.debug(debug_message)
-                print(debug_message)
-
-            # throttle us otherwise twilio will
+            # throttling
             if len(messaging_queue) > 1:
                 time.sleep(1)
         except Exception as e:
