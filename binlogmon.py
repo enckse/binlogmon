@@ -150,7 +150,11 @@ class TwilioMessage(Message):
         self.token = config[AUTH_TOKEN_KEY]
         # NOTE: numbers must be 'verified'
         self.from_number = config[FROM_KEY]
-        self.to_numbers = set(config[self.method])
+        to_values = config[self.method]
+        self.to_numbers = set(to_values)
+        if len(self.to_numbers) != to_values:
+            logger.warn("duplicate numbers for messaging")
+        self.client = None
 
     def get_output_calls(self):
         """Inherited from base."""
@@ -160,17 +164,17 @@ class TwilioMessage(Message):
                 if dry_run:
                     self._dry_run_message(send_to)
                 else:
-                    if obj.client is None:
+                    if self.client is None:
                         import twilio
                         import twilio.rest
-                        obj.client = twilio.rest.TwilioRestClient(self.sid,
-                                                                  self.token)
-                    result = obj.execute()
-                    logger.debug(result.sid)
+                        self.client = twilio.rest.TwilioRestClient(self.sid,
+                                                                   self.token)
+                    result = obj._execute(self.client, send_to)
+                    self.logger.debug(result.sid)
 
             yield (item, self.method, call, self)
 
-    def _execute(self):
+    def _execute(self, client, item):
         raise Exception("base twilio _MOST_ support execute")
 
     def _dry_run_message(self, to_number):
@@ -200,12 +204,12 @@ class TwilioCall(TwilioMessage):
         self.call_url = config[CALL_URL_KEY]
         self.logger.debug('using url: %s' % self.call_url)
 
-    def _execute(self):
+    def _execute(self, client, item):
         """Inherited from base."""
         call_object = client.calls.create(
             to=item,
-            from_=from_number,
-            url=call_url
+            from_=self.from_number,
+            url=self.call_url
         )
 
         return call_object
@@ -236,14 +240,14 @@ class TwilioSMS(TwilioMessage):
 
         self.logger.warn(self.short_message)
 
-    def _execute(self):
+    def _execute(self, client, item):
         """Inherited from base."""
         message_object = client.messages.create(
-            body=short_message,
+            body=self.short_message,
             to=item,
-            from_=from_number
+            from_=self.from_number
         )
-
+        
         return message_object
 
     def _get_dry_run_message(self):
