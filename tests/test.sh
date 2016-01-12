@@ -77,6 +77,9 @@ FILTER_ALL_LONG=" (and 1 more messages)"
 OVERRIDE_ALT="alternative-num"
 OVERRIDE_CONFIG="override"
 
+# Example config
+EXAMPLE_CONFIG="example"
+
 function get-config-name()
 {
     echo ${CONFIG_PREFIX}$1${CONFIG_POSTFIX}
@@ -108,6 +111,8 @@ OVERRIDE_FILE="{
     \"override\": false,
     \"shared\": \"$(get-config-name $DEFAULT_CONFIG)\"
 }"
+
+EXAMPLE_FILE=$(cat ../example.json | sed "s/\/path\/to\/cache\/last\/detected\///g" | sed "s/\/path\/to\/file\/to\/lock/lock.json/g" | sed "s/\/path\/to\/a\/shared\/config.json//g")
 
 PHONE_CONFIG=$(echo "$CONFIG_FILE" | grep -v "\"sms\":")
 SMS_CONFIG=$(echo "$CONFIG_FILE" | grep -v "\"call\":")
@@ -219,6 +224,7 @@ save-config "$FILTER_FILE" $FILTER_CONFIG
 save-config "$PHONE_CONFIG" $PHONE
 save-config "$SMS_CONFIG" $SMS
 save-config "$OVERRIDE_FILE" $OVERRIDE_CONFIG
+save-config "$EXAMPLE_FILE" $EXAMPLE_CONFIG
 
 if [ $NORMAL_TESTS -eq 1 ]; then
     echo "Normal test..."
@@ -231,6 +237,11 @@ if [ $NORMAL_TESTS -eq 1 ]; then
     
     echo "Normal (sms-only)..."
     single-type-test "$SMS" "$SMS_NUMBER" "$NORMAL_MSG"
+    
+    echo "Example test..."
+    results=$(run-test "$EXAMPLE_CONFIG")
+    check-all-content "$results" "$NORMAL_MSG" "$URL"
+    normal-cache
 fi
 
 if [ $CACHE_TESTS -eq 1 ]; then

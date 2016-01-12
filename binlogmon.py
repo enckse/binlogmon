@@ -409,27 +409,29 @@ def main():
             logger.debug(config_file)
 
         if SHARED_KEY in config_file:
+            shared_value = config_file[SHARED_KEY]
             logger.debug('loading shared config')
-            with open(config_file[SHARED_KEY], 'r') as f:
-                shared_config = json.loads(f.read())
-                logger.debug(shared_config)
-                do_override = True
-                if OVERRIDE_KEY in config_file:
-                    do_override = config_file[OVERRIDE_KEY]
+            if len(shared_value) > 0:
+                with open(shared_value, 'r') as f:
+                    shared_config = json.loads(f.read())
+                    logger.debug(shared_config)
+                    do_override = True
+                    if OVERRIDE_KEY in config_file:
+                        do_override = config_file[OVERRIDE_KEY]
 
-                # Replay this 'over' the given, it overrides
-                for key in shared_config:
-                    if key == SHARED_KEY:
-                        logger.warn("Nested config sharing is not supported")
-                        continue
-                    if key in config_file:
-                        logger.warn('%s has multiple values' % key)
-                        if do_override:
-                            logger.warn("using child")
+                    # Replay this 'over' the given, it overrides
+                    for key in shared_config:
+                        if key == SHARED_KEY:
+                            logger.warn("Nested config sharing is not supported")
                             continue
-                        else:
-                            logger.warn("using parent")
-                    config_file[key] = shared_config[key]
+                        if key in config_file:
+                            logger.warn('%s has multiple values' % key)
+                            if do_override:
+                                logger.warn("using child")
+                                continue
+                            else:
+                                logger.warn("using parent")
+                        config_file[key] = shared_config[key]
 
         check_parameter(SIZE_KEY, config_file)
         check_parameter(START_KEY, config_file, '1970-01-01 00:00:00')
