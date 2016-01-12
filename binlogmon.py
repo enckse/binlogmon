@@ -41,12 +41,12 @@ CALL_URL_KEY = 'url'
 LOCK_KEY = 'lock'
 SHARED_KEY = 'shared'
 OVERRIDE_KEY = 'override'
-MAX_ITEM_FAILURES = 100
 
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 OUT_DATE = '%Y-%m-%dT%H:%M:%S'
 FILE_CHUNKSIZE = 8192
 LOG_LEVEL = logging.INFO
+MAX_ITEM_FAILURES = 100
 
 
 def process_file(logger, file_bytes, cache_object, configuration):
