@@ -247,7 +247,7 @@ class TwilioSMS(TwilioMessage):
             to=item,
             from_=self.from_number
         )
-        
+
         return message_object
 
     def _get_dry_run_message(self):
