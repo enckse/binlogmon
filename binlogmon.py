@@ -32,15 +32,19 @@ TIME_KEY = 'time'
 FILTER_KEY = 'filters'
 ACCOUNT_SID_KEY = 'sid'
 AUTH_TOKEN_KEY = 'token'
-SMS_TO_KEY = 'sms'
 FROM_KEY = 'from'
 CACHE_KEY = 'cache'
-LONG_MESSAGE_KEY = 'long'
-CALL_KEY = 'call'
-CALL_URL_KEY = 'url'
 LOCK_KEY = 'lock'
 SHARED_KEY = 'shared'
 OVERRIDE_KEY = 'override'
+
+# Call subsection
+CALL_KEY = 'call'
+CALL_URL_KEY = 'url'
+
+# SMS subsection
+SMS_TO_KEY = 'sms'
+LONG_MESSAGE_KEY = 'long'
 
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 OUT_DATE = '%Y-%m-%dT%H:%M:%S'

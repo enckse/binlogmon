@@ -1,6 +1,6 @@
 binlogmon
 =========
-Monitor and send SMS messages out when new entries are written to a binary log file. It requires 2 major components in the binary file to be useful:
+Monitor and send messages out when new entries are written to a binary log file. It requires 2 major components in the binary file to be useful:
 
 1. A message (to send)
 
