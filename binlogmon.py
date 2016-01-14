@@ -30,21 +30,20 @@ PATTERN_KEY = 'pattern'
 MESSAGE_KEY = 'message'
 TIME_KEY = 'time'
 FILTER_KEY = 'filters'
-ACCOUNT_SID_KEY = 'sid'
-AUTH_TOKEN_KEY = 'token'
-FROM_KEY = 'from'
 CACHE_KEY = 'cache'
 LOCK_KEY = 'lock'
 SHARED_KEY = 'shared'
 OVERRIDE_KEY = 'override'
 
-# Call subsection
+TWILIO_SECTION = 'twilio'
+TO_KEY = 'to'
 CALL_KEY = 'call'
 CALL_URL_KEY = 'url'
-
-# SMS subsection
 SMS_TO_KEY = 'sms'
 LONG_MESSAGE_KEY = 'long'
+ACCOUNT_SID_KEY = 'sid'
+AUTH_TOKEN_KEY = 'token'
+FROM_KEY = 'from'
 
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 OUT_DATE = '%Y-%m-%dT%H:%M:%S'
@@ -154,11 +153,14 @@ class TwilioMessage(Message):
         self.token = config[AUTH_TOKEN_KEY]
         # NOTE: numbers must be 'verified'
         self.from_number = config[FROM_KEY]
-        to_values = config[self.method]
+        check_parameter(self.method, config)
+        use_config = config[self.method]
+        to_values = use_config[TO_KEY]
         self.to_numbers = set(to_values)
         if len(self.to_numbers) != to_values:
             logger.warn("duplicate numbers for messaging")
         self.client = None
+        return use_config
 
     def get_output_calls(self):
         """Inherited from base."""
@@ -203,9 +205,9 @@ class TwilioCall(TwilioMessage):
     def initialize(self, message_list, config, logger):
         """Inherited from base."""
         self.method = CALL_KEY
-        self._init(config, logger)
-        check_parameter(CALL_URL_KEY, config)
-        self.call_url = config[CALL_URL_KEY]
+        use_config = self._init(config, logger)
+        check_parameter(CALL_URL_KEY, use_config)
+        self.call_url = use_config[CALL_URL_KEY]
         self.logger.debug('using url: %s' % self.call_url)
 
     def _execute(self, client, item):
@@ -233,9 +235,9 @@ class TwilioSMS(TwilioMessage):
     def initialize(self, message_list, config, logger):
         """Inherited from base."""
         self.method = SMS_TO_KEY
-        self._init(config, logger)
-        check_parameter(LONG_MESSAGE_KEY, config)
-        long_message = config[LONG_MESSAGE_KEY]
+        use_config = self._init(config, logger)
+        check_parameter(LONG_MESSAGE_KEY, use_config)
+        long_message = use_config[LONG_MESSAGE_KEY]
         self.short_message = datetime.datetime.now().strftime(OUT_DATE)
         self.short_message = self.short_message + " - "
         self.short_message += message_list[0][0:SMS_LENGTH]
@@ -269,21 +271,24 @@ def send_message(logger, message_list, config, dry_run):
     queued = []
     raw_methods = []
     valid_method = False
-    if SMS_TO_KEY in config:
-        valid_method = True
-        raw_methods.append(TwilioSMS)
+    if TWILIO_SECTION in config:
+        subsection = config[TWILIO_SECTION]
+        if SMS_TO_KEY in subsection:
+            valid_method = True
+            raw_methods.append((subsection, TwilioSMS))
 
-    if CALL_KEY in config:
-        valid_method = True
-        raw_methods.append(TwilioCall)
+        if CALL_KEY in subsection:
+            valid_method = True
+            raw_methods.append((subsection, TwilioCall))
 
     if not valid_method:
         raise Exception("Not configured to message anyone...")
 
     queued = []
     for raw in raw_methods:
-        method = raw()
-        method.initialize(message_list, config, logger)
+        method = raw[1]()
+        config_to_use = raw[0]
+        method.initialize(message_list, config_to_use, logger)
         for item in method.get_output_calls():
             queued.append(item)
 
@@ -341,6 +346,27 @@ def file_locking(logger, do_lock, lock_file, enable):
         control = fcntl.LOCK_EX if enable else fcntl.LOCK_UN
         with open(lock_file, 'w') as fd:
             fcntl.lockf(fd.fileno(), control)
+
+
+def overriding(shared, config, override, logger):
+    """Config overriding."""
+    for key, value in shared.items():
+        if key == SHARED_KEY:
+            logger.warn("Nested config sharing is not supported")
+            continue
+
+        if isinstance(value, dict) and key in config:
+            config[key] = overriding(value, config[key], override, logger)
+        else:
+            if key in config:
+                logger.warn('%s has multiple values' % key)
+                if override:
+                    logger.warn("using child")
+                    continue
+                else:
+                    logger.warn("using parent")
+            config[key] = value
+    return config
 
 
 def main():
@@ -420,18 +446,10 @@ def main():
                         do_override = config_file[OVERRIDE_KEY]
 
                     # Replay this 'over' the given, it overrides
-                    for key in shared_config:
-                        if key == SHARED_KEY:
-                            logger.warn("Nested config sharing is not supported")
-                            continue
-                        if key in config_file:
-                            logger.warn('%s has multiple values' % key)
-                            if do_override:
-                                logger.warn("using child")
-                                continue
-                            else:
-                                logger.warn("using parent")
-                        config_file[key] = shared_config[key]
+                    config_file = overriding(shared_config,
+                                             config_file,
+                                             do_override,
+                                             logger)
 
         check_parameter(SIZE_KEY, config_file)
         check_parameter(START_KEY, config_file, '1970-01-01 00:00:00')
@@ -439,9 +457,6 @@ def main():
         check_parameter(MESSAGE_KEY, config_file)
         check_parameter(TIME_KEY, config_file)
         check_parameter(FILTER_KEY, config_file, [])
-        check_parameter(ACCOUNT_SID_KEY, config_file)
-        check_parameter(AUTH_TOKEN_KEY, config_file)
-        check_parameter(FROM_KEY, config_file)
         check_parameter(CACHE_KEY, config_file)
         logger.debug('final config:')
         logger.debug(config_file)

@@ -1,10 +1,10 @@
 {
     "cache":"/path/to/cache/last/detected/last.json",
-    "start":"2015-12-10 12:15:30",
+    "start":"2016-01-01 00:00:00",
     "size":11,
-    "pattern": "5sxsi",
+    "pattern": "<5sxsi",
     "message":0,
-    "time":1,
+    "time":2,
     "filters":["test"],
     "twilio":
     {

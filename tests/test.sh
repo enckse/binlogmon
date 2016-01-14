@@ -86,19 +86,28 @@ function get-config-name()
 }
 
 CONFIG_FILE="{
-    \"sid\": \"twilio-sid\",
-    \"token\": \"twilio-auth-token\",
-    \"sms\": [\"$NUMBER1\", \"$NUMBER2\"],
-    \"from\": \"$NORMAL_FROM\",
-    \"call\": [\"$NUMBER1\", \"$NUMBER3\"],
-    \"url\": \"$RAW_URL\",
+    \"twilio\":
+    {
+        \"sid\": \"twilio-sid\",
+        \"token\": \"twilio-auth-token\",
+        \"from\": \"$NORMAL_FROM\",
+        \"sms\": 
+        {
+            \"to\": [\"$NUMBER1\", \"$NUMBER2\"],
+            \"long\": \"$LONG_MESSAGE\"
+        },
+        \"call\":
+        {
+            \"to\": [\"$NUMBER1\", \"$NUMBER3\"],
+            \"url\": \"$RAW_URL\"
+        }
+    },
     \"cache\":\"$LAST_JSON\",
     \"start\":\"2016-01-01 00:00:00\",
     \"size\":11,
     \"pattern\": \"<5sxsi\",
     \"message\":0,
-    \"time\":2,
-    \"long\":\"$LONG_MESSAGE\"
+    \"time\":2
 }"
 
 FILTER_FILE="{
@@ -107,15 +116,18 @@ FILTER_FILE="{
 }"
 
 OVERRIDE_FILE="{
-    \"from\": \"$OVERRIDE_ALT\",
+    \"twilio\":
+    {
+        \"from\": \"$OVERRIDE_ALT\"
+    },
     \"override\": false,
     \"shared\": \"$(get-config-name $DEFAULT_CONFIG)\"
 }"
 
 EXAMPLE_FILE=$(cat ../example.json | sed "s/\/path\/to\/cache\/last\/detected\///g" | sed "s/\/path\/to\/file\/to\/lock/lock.json/g" | sed "s/\/path\/to\/a\/shared\/config.json//g")
 
-PHONE_CONFIG=$(echo "$CONFIG_FILE" | grep -v "\"sms\":")
-SMS_CONFIG=$(echo "$CONFIG_FILE" | grep -v "\"call\":")
+PHONE_CONFIG=$(echo "$CONFIG_FILE" | sed "s/\"sms\"/\"other\"/g")
+SMS_CONFIG=$(echo "$CONFIG_FILE" | sed "s/\"call\"/\"other\"/g")
 
 # Run tests (config to use, indicator to delete cache file)
 function run-test()
@@ -133,7 +145,7 @@ function check-cache-value()
     echo "$1" | grep -q "\"$2\": $3"
     if [ $? -ne 0 ]; then
         echo "$1"
-        echo "FAILED checking cached $2"
+        echo "FAILED checking cached $2 ($3)"
         exit -1
     fi   
 }
