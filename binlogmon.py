@@ -177,9 +177,10 @@ class TwilioMessage(Message):
                                                                    self.token)
                     result = obj._execute(self.client, send_to)
                     self.logger.debug(result.sid)
+                    time.sleep(1)
 
             yield (item, self.method, call, self)
-
+    
     def _execute(self, client, item):
         raise Exception("base twilio _MOST_ support execute")
 
@@ -303,10 +304,6 @@ def send_message(logger, message_list, config, dry_run):
         try:
             logger.info("{0} to {1}".format(function, item))
             callback(dry_run, obj, item)
-
-            # throttling
-            if len(messaging_queue) > 1:
-                time.sleep(1)
         except Exception as e:
             logger.warn('unable to send message to %s' % item)
             logger.error(e)
