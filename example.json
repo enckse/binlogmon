@@ -1,18 +1,27 @@
 {
     "cache":"/path/to/cache/last/detected/last.json",
-    "start":"2015-12-10 12:15:30",
-    "size":1024,
-    "pattern": "<5sxi",
+    "start":"2016-01-01 00:00:00",
+    "size":11,
+    "pattern": "<5sxsi",
     "message":0,
-    "time":1,
+    "time":2,
     "filters":["test"],
-    "long":" (and {0} more messages)",
-    "sid": "twilio-sid",
-    "token": "twilio-auth-token",
-    "sms": ["number1", "number2"],
-    "from": "from-number",
-    "call": ["number1", "number3"],
-    "url": "http://some/valid/twiml/url",
+    "twilio":
+    {
+        "sid": "twilio-sid",
+        "token": "twilio-auth-token",
+        "from": "from-number",
+        "sms": 
+        {
+            "to": ["number1", "number2"],
+            "long":" (and {0} more messages)"
+        },
+        "call":
+        {
+            "to": ["number1", "number3"],
+            "url": "http://some/valid/twiml/url"
+        }
+    },
     "lock": "/path/to/file/to/lock",
     "shared": "/path/to/a/shared/config.json",
     "override": false

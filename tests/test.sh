@@ -77,25 +77,37 @@ FILTER_ALL_LONG=" (and 1 more messages)"
 OVERRIDE_ALT="alternative-num"
 OVERRIDE_CONFIG="override"
 
+# Example config
+EXAMPLE_CONFIG="example"
+
 function get-config-name()
 {
     echo ${CONFIG_PREFIX}$1${CONFIG_POSTFIX}
 }
 
 CONFIG_FILE="{
-    \"sid\": \"twilio-sid\",
-    \"token\": \"twilio-auth-token\",
-    \"sms\": [\"$NUMBER1\", \"$NUMBER2\"],
-    \"from\": \"$NORMAL_FROM\",
-    \"call\": [\"$NUMBER1\", \"$NUMBER3\"],
-    \"url\": \"$RAW_URL\",
+    \"twilio\":
+    {
+        \"sid\": \"twilio-sid\",
+        \"token\": \"twilio-auth-token\",
+        \"from\": \"$NORMAL_FROM\",
+        \"sms\": 
+        {
+            \"to\": [\"$NUMBER1\", \"$NUMBER2\"],
+            \"long\": \"$LONG_MESSAGE\"
+        },
+        \"call\":
+        {
+            \"to\": [\"$NUMBER1\", \"$NUMBER3\"],
+            \"url\": \"$RAW_URL\"
+        }
+    },
     \"cache\":\"$LAST_JSON\",
     \"start\":\"2016-01-01 00:00:00\",
     \"size\":11,
     \"pattern\": \"<5sxsi\",
     \"message\":0,
-    \"time\":2,
-    \"long\":\"$LONG_MESSAGE\"
+    \"time\":2
 }"
 
 FILTER_FILE="{
@@ -104,13 +116,18 @@ FILTER_FILE="{
 }"
 
 OVERRIDE_FILE="{
-    \"from\": \"$OVERRIDE_ALT\",
+    \"twilio\":
+    {
+        \"from\": \"$OVERRIDE_ALT\"
+    },
     \"override\": false,
     \"shared\": \"$(get-config-name $DEFAULT_CONFIG)\"
 }"
 
-PHONE_CONFIG=$(echo "$CONFIG_FILE" | grep -v "\"sms\":")
-SMS_CONFIG=$(echo "$CONFIG_FILE" | grep -v "\"call\":")
+EXAMPLE_FILE=$(cat ../example.json | sed "s/\/path\/to\/cache\/last\/detected\///g" | sed "s/\/path\/to\/file\/to\/lock/lock.json/g" | sed "s/\/path\/to\/a\/shared\/config.json//g")
+
+PHONE_CONFIG=$(echo "$CONFIG_FILE" | sed "s/\"sms\"/\"other\"/g")
+SMS_CONFIG=$(echo "$CONFIG_FILE" | sed "s/\"call\"/\"other\"/g")
 
 # Run tests (config to use, indicator to delete cache file)
 function run-test()
@@ -128,7 +145,7 @@ function check-cache-value()
     echo "$1" | grep -q "\"$2\": $3"
     if [ $? -ne 0 ]; then
         echo "$1"
-        echo "FAILED checking cached $2"
+        echo "FAILED checking cached $2 ($3)"
         exit -1
     fi   
 }
@@ -219,6 +236,7 @@ save-config "$FILTER_FILE" $FILTER_CONFIG
 save-config "$PHONE_CONFIG" $PHONE
 save-config "$SMS_CONFIG" $SMS
 save-config "$OVERRIDE_FILE" $OVERRIDE_CONFIG
+save-config "$EXAMPLE_FILE" $EXAMPLE_CONFIG
 
 if [ $NORMAL_TESTS -eq 1 ]; then
     echo "Normal test..."
@@ -231,6 +249,11 @@ if [ $NORMAL_TESTS -eq 1 ]; then
     
     echo "Normal (sms-only)..."
     single-type-test "$SMS" "$SMS_NUMBER" "$NORMAL_MSG"
+    
+    echo "Example test..."
+    results=$(run-test "$EXAMPLE_CONFIG")
+    check-all-content "$results" "$NORMAL_MSG" "$URL"
+    normal-cache
 fi
 
 if [ $CACHE_TESTS -eq 1 ]; then
