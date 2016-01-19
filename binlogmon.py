@@ -88,7 +88,8 @@ def process_file(logger, file_bytes, cache_object, configuration):
         for item in filters:
             result = item.match(raw_message)
             if result is not None:
-                logger.debug("filtered out {0} via {1}".format(raw_message, item))
+                logger.debug("filtered out {0} via {1}".format(raw_message,
+                                                               item))
                 filter_out = True
                 break
 
@@ -183,7 +184,7 @@ class TwilioMessage(Message):
                     time.sleep(1)
 
             yield (item, self.method, call, self)
-    
+
     def _execute(self, client, item):
         raise Exception("base twilio _MOST_ support execute")
 
