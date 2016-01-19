@@ -69,6 +69,7 @@ def process_file(logger, file_bytes, cache_object, configuration):
     message_idx = configuration[MESSAGE_KEY]
     time_idx = configuration[TIME_KEY]
     for item in configuration[FILTER_KEY]:
+        logger.debug("using filter: %s" % item)
         filters.append(re.compile(item))
 
     cache_time = None
@@ -87,6 +88,7 @@ def process_file(logger, file_bytes, cache_object, configuration):
         for item in filters:
             result = item.match(raw_message)
             if result is not None:
+                logger.debug("filtered out {0} via {1}".format(raw_message, item))
                 filter_out = True
                 break
 
@@ -105,6 +107,7 @@ def process_file(logger, file_bytes, cache_object, configuration):
             obj[OBJECT_VIS_TIME] = str(time)
 
             if cache_time is None or obj[OBJECT_TIME] > cache_time:
+                logger.debug(obj)
                 last_reported.append(obj)
         offset += chunking
     return last_reported
