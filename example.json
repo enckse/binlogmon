@@ -5,7 +5,8 @@
     "pattern": "<5sxsi",
     "message":0,
     "time":2,
-    "filters":["test"],
+    "whitelist":[],
+    "blacklist":["test"],
     "twilio":
     {
         "sid": "twilio-sid",
