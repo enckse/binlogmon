@@ -72,7 +72,8 @@ def process_file(logger, file_bytes, cache_object, configuration):
     time_idx = configuration[TIME_KEY]
     def _filter_setup(is_whitelist, entry, filter_set):
         logger.debug("filter {0} (whitelist: {1})".format(entry, is_whitelist))
-        filter_set.append((is_whitelist, re.compile(entry)))        
+        compiled = re.compile(entry)
+        filter_set.append((is_whitelist, compiled))        
 
     # Whitelist applied first, blacklist second (so whitelist _can_ be initial)
     for item in configuration[WHITELIST_KEY]:
