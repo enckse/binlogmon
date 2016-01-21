@@ -29,8 +29,8 @@ START_KEY = 'start'
 PATTERN_KEY = 'pattern'
 MESSAGE_KEY = 'message'
 TIME_KEY = 'time'
-BLACKLIST_KEY='blacklist'
-WHITELIST_KEY='whitelist'
+BLACKLIST_KEY = 'blacklist'
+WHITELIST_KEY = 'whitelist'
 CACHE_KEY = 'cache'
 LOCK_KEY = 'lock'
 SHARED_KEY = 'shared'
@@ -70,10 +70,11 @@ def process_file(logger, file_bytes, cache_object, configuration):
     pattern = configuration[PATTERN_KEY]
     message_idx = configuration[MESSAGE_KEY]
     time_idx = configuration[TIME_KEY]
+
     def _filter_setup(is_whitelist, entry, filter_set):
         logger.debug("filter {0} (whitelist: {1})".format(entry, is_whitelist))
         compiled = re.compile(entry)
-        filter_set.append((is_whitelist, compiled))        
+        filter_set.append((is_whitelist, compiled))
 
     # Whitelist applied first, blacklist second (so whitelist _can_ be initial)
     for item in configuration[WHITELIST_KEY]:
@@ -82,7 +83,7 @@ def process_file(logger, file_bytes, cache_object, configuration):
 
     for item in configuration[BLACKLIST_KEY]:
         _filter_setup(False, item, filters)
-    
+
     cache_time = None
     if cache_object is not None:
         cache_time = cache_object[OBJECT_TIME]
@@ -120,7 +121,7 @@ def process_file(logger, file_bytes, cache_object, configuration):
         if has_whitelist:
             whitelisted = whitelist_matches > 0
 
-        do_output = whitelisted    
+        do_output = whitelisted
         if do_output:
             do_output = not blacklisted
 
