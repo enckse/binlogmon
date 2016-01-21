@@ -63,6 +63,16 @@ An example config file "example.json" is in the root, the breakdown is below
     "time":1
 ```
 
+* Whitelist of regular expressions that a message must match to be included (optional)
+```
+    "whitelist":[],
+```
+
+* Blacklist of regular expressions that will prevent messages from being included (optional)
+```
+    "blacklist":["test"],
+```
+
 * Path to a file that can be used as an exclusive lock (for multiple instances running)
 ```
     "lock": "/path/to/file/to/lock"
