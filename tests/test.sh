@@ -72,6 +72,8 @@ FILTER_CACHE_TIME="842152240"
 FILTER_CACHE_MSG="ehg"
 FILTER_CACHE_DATE="2042-09-08 03:10:40"
 FILTER_ALL_LONG=" (and 1 more messages)"
+WHITELIST_CONFIG="whitelist"
+WHITEBLACK_CONFIG="whiteblack"
 
 # Override testing
 OVERRIDE_ALT="alternative-num"
@@ -111,7 +113,19 @@ CONFIG_FILE="{
 }"
 
 FILTER_FILE="{
-    \"filters\":[\"$CACHE_MSG\"],
+    \"blacklist\":[\"$CACHE_MSG\"],
+    \"shared\": \"$(get-config-name $DEFAULT_CONFIG)\"
+}"
+
+
+WHITELIST_FILE="{
+    \"shared\": \"$(get-config-name $DEFAULT_CONFIG)\",
+    \"whitelist\":[\"^((?!$CACHE_MSG).)*\$\"]
+}"
+
+WHITEANDBLACKLIST_FILE="{
+    \"blacklist\":[\"$CACHE_MSG\"],
+    \"whitelist\":[\"^((?!$CACHE_MSG).)*\$\", \"$CACHE_MSG\"],
     \"shared\": \"$(get-config-name $DEFAULT_CONFIG)\"
 }"
 
@@ -237,6 +251,8 @@ save-config "$PHONE_CONFIG" $PHONE
 save-config "$SMS_CONFIG" $SMS
 save-config "$OVERRIDE_FILE" $OVERRIDE_CONFIG
 save-config "$EXAMPLE_FILE" $EXAMPLE_CONFIG
+save-config "$WHITELIST_FILE" $WHITELIST_CONFIG
+save-config "$WHITEANDBLACKLIST_FILE" $WHITEBLACK_CONFIG
 
 if [ $NORMAL_TESTS -eq 1 ]; then
     echo "Normal test..."
@@ -282,6 +298,16 @@ if [ $FILTER_TESTS -eq 1 ]; then
     echo "Filter cache test partial..."
     results=$(run-test "$FILTER_CONFIG" $RM_FILE)
     check-all-content "$results" "$FILTER_CACHE_MSG$SHORT_SMS" "$URL"
+    filter-cache
+
+    echo "Whitelist test..."
+    results=$(run-test "$WHITELIST_CONFIG")
+    check-all-content "$results" "$FILTER_CACHE_MSG$FILTER_ALL_LONG" "$URL"
+    filter-cache
+
+    echo "Whitelist/blacklist test..."
+    results=$(run-test "$WHITEBLACK_CONFIG")
+    check-all-content "$results" "$FILTER_CACHE_MSG$FILTER_ALL_LONG" "$URL"
     filter-cache
 fi
 

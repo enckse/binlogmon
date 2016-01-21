@@ -29,7 +29,8 @@ START_KEY = 'start'
 PATTERN_KEY = 'pattern'
 MESSAGE_KEY = 'message'
 TIME_KEY = 'time'
-FILTER_KEY = 'filters'
+BLACKLIST_KEY = 'blacklist'
+WHITELIST_KEY = 'whitelist'
 CACHE_KEY = 'cache'
 LOCK_KEY = 'lock'
 SHARED_KEY = 'shared'
@@ -62,15 +63,26 @@ def process_file(logger, file_bytes, cache_object, configuration):
     offset = 0
     last_reported = []
     filters = []
+    has_whitelist = False
     start_date = datetime.datetime.strptime(configuration[START_KEY],
                                             DATE_FORMAT)
     chunking = configuration[SIZE_KEY]
     pattern = configuration[PATTERN_KEY]
     message_idx = configuration[MESSAGE_KEY]
     time_idx = configuration[TIME_KEY]
-    for item in configuration[FILTER_KEY]:
-        logger.debug("using filter: %s" % item)
-        filters.append(re.compile(item))
+
+    def _filter_setup(is_whitelist, entry, filter_set):
+        logger.debug("filter {0} (whitelist: {1})".format(entry, is_whitelist))
+        compiled = re.compile(entry)
+        filter_set.append((is_whitelist, compiled))
+
+    # Whitelist applied first, blacklist second (so whitelist _can_ be initial)
+    for item in configuration[WHITELIST_KEY]:
+        has_whitelist = True
+        _filter_setup(True, item, filters)
+
+    for item in configuration[BLACKLIST_KEY]:
+        _filter_setup(False, item, filters)
 
     cache_time = None
     if cache_object is not None:
@@ -84,16 +96,37 @@ def process_file(logger, file_bytes, cache_object, configuration):
         # expects ascii here
         raw_data = [x for x in unpacked[message_idx] if x != 0]
         raw_message = array.array('B', raw_data).tostring().decode('ascii')
-        filter_out = False
-        for item in filters:
-            result = item.match(raw_message)
-            if result is not None:
-                logger.debug("filtered out {0} via {1}".format(raw_message,
-                                                               item))
-                filter_out = True
-                break
 
-        if not filter_out:
+        whitelist_matches = 0
+        blacklist_matches = 0
+        for item in filters:
+            regex = item[1]
+            is_whitelisted = item[0]
+            result = regex.match(raw_message)
+            was_match = result is not None
+            logger.debug('{0} match {1}? {2} (wl: {3})'.format(regex,
+                                                               raw_message,
+                                                               was_match,
+                                                               is_whitelisted))
+
+            if is_whitelisted:
+                if was_match:
+                    whitelist_matches += 1
+            else:
+                if was_match:
+                    blacklist_matches += 1
+
+        blacklisted = blacklist_matches > 0
+        whitelisted = True
+        if has_whitelist:
+            whitelisted = whitelist_matches > 0
+
+        do_output = whitelisted
+        if do_output:
+            do_output = not blacklisted
+
+        logger.debug('{0} will be output ? {1}'.format(raw_message, do_output))
+        if do_output:
             obj = {}
             seconds = unpacked[time_idx]
             time = start_date + datetime.timedelta(seconds=seconds)
@@ -457,8 +490,9 @@ def main():
         check_parameter(PATTERN_KEY, config_file)
         check_parameter(MESSAGE_KEY, config_file)
         check_parameter(TIME_KEY, config_file)
-        check_parameter(FILTER_KEY, config_file, [])
         check_parameter(CACHE_KEY, config_file)
+        check_parameter(WHITELIST_KEY, config_file, [])
+        check_parameter(BLACKLIST_KEY, config_file, [])
         logger.debug('final config:')
         logger.debug(config_file)
 
