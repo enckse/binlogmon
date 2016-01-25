@@ -129,7 +129,7 @@ def process_file(logger, file_bytes, cache_object, configuration):
         if do_output:
             obj = {}
             seconds = unpacked[time_idx]
-            time = start_date + datetime.timedelta(seconds=seconds)
+            display_time = start_date + datetime.timedelta(seconds=seconds)
 
             # We can just sort and use the seconds offset
             # (even if it is abritrary because it still only counts up)
@@ -138,7 +138,7 @@ def process_file(logger, file_bytes, cache_object, configuration):
 
             # This is for actual troubleshooting/helping us
             # to provide the ability to see 'when' something actually happened
-            obj[OBJECT_VIS_TIME] = str(time)
+            obj[OBJECT_VIS_TIME] = str(display_time)
 
             if cache_time is None or obj[OBJECT_TIME] > cache_time:
                 logger.debug(obj)
@@ -204,6 +204,7 @@ class TwilioMessage(Message):
         self.logger.info('sending messages from %s' % self.from_number)
         for item in self.to_numbers:
             def call(dry_run, obj, send_to):
+                """Perform the 'output' of messages (via twilio)."""
                 if dry_run:
                     self._dry_run_message(send_to)
                 else:
