@@ -48,7 +48,7 @@ URL="($RAW_URL)"
 NUMBER1="number1"
 NUMBER2="number2"
 NUMBER3="number3"
-LONG_MESSAGE=" (and {0} more messages)"
+LONG_MESSAGE=" (and {remaining} more messages)"
 SMS_NUMBER="$NUMBER1 $NUMBER2"
 PHONE_NUMBER="$NUMBER1 $NUMBER3"
 SMS="sms"
@@ -96,7 +96,8 @@ CONFIG_FILE="{
         \"sms\": 
         {
             \"to\": [\"$NUMBER1\", \"$NUMBER2\"],
-            \"long\": \"$LONG_MESSAGE\"
+            \"long\": \"$LONG_MESSAGE\",
+            \"message\": \"{datetime} - {first}{long}\"
         },
         \"call\":
         {

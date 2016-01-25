@@ -143,10 +143,14 @@ An example config file "example.json" is in the root, the breakdown is below
 }
 ```
 
+* Message text to use when sending a message (will be formatted with placeholders)
+```
+    "message": "{datetime} - {first}{long}"
+```
 
 * Message text to use when more than 1 new message is detected (when using 'sms')
 ```
-    "long":" (and {0} more messages)"
+    "long":" (and {remaining} more messages)"
 ```
 
 #### Call subsection (twilio)

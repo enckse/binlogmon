@@ -15,7 +15,8 @@
         "sms": 
         {
             "to": ["number1", "number2"],
-            "long":" (and {0} more messages)"
+            "long":" (and {remaining} more messages)",
+            "message": "{datetime} - {first}{long}"
         },
         "call":
         {

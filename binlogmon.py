@@ -45,6 +45,7 @@ LONG_MESSAGE_KEY = 'long'
 ACCOUNT_SID_KEY = 'sid'
 AUTH_TOKEN_KEY = 'token'
 FROM_KEY = 'from'
+SMS_MESSAGE_KEY = "message"
 
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 OUT_DATE = '%Y-%m-%dT%H:%M:%S'
@@ -275,15 +276,33 @@ class TwilioSMS(TwilioMessage):
         """Inherited from base."""
         self.method = SMS_TO_KEY
         use_config = self._init(config, logger)
+        check_parameter(SMS_MESSAGE_KEY, use_config)
         check_parameter(LONG_MESSAGE_KEY, use_config)
         long_message = use_config[LONG_MESSAGE_KEY]
-        self.short_message = datetime.datetime.now().strftime(OUT_DATE)
-        self.short_message = self.short_message + " - "
-        self.short_message += message_list[0][0:SMS_LENGTH]
-        if len(message_list) > 1:
-            self.short_message += long_message.format(len(message_list) - 1)
-
+        message_text = use_config[SMS_MESSAGE_KEY]
+        self.short_message = TwilioSMS._format_message(message_text,
+                                                       long_message,
+                                                       message_list)
         self.logger.warn(self.short_message)
+
+    def _format_message(message, long_message, message_list):
+        """Format the SMS message."""
+        replaces = {}
+        replaces["{datetime}"] = datetime.datetime.now().strftime(OUT_DATE)
+        replaces["{first}"] = message_list[0][0:SMS_LENGTH]
+        long_text = ""
+        if len(message_list) > 1:
+            replaces["{remaining}"] = str(len(message_list) - 1)
+            long_text = TwilioSMS._format_message_part(long_message, replaces)
+        replaces["{long}"] = long_text
+        return TwilioSMS._format_message_part(message, replaces)
+
+    def _format_message_part(message, replaces):
+        """Format a single message part for an SMS."""
+        resulting = message
+        for item in replaces:
+            resulting = resulting.replace(item, replaces[item])
+        return resulting
 
     def _execute(self, client, item):
         """Inherited from base."""
