@@ -393,15 +393,6 @@ def check_parameter(key, configuration, default=None):
             configuration[key] = default
 
 
-def file_locking(logger, do_lock, lock_file, enable):
-    """Perform a file lock operation."""
-    if do_lock:
-        logger.debug('performing lock operation where enable is %s' % enable)
-        control = fcntl.LOCK_EX if enable else fcntl.LOCK_UN
-        with open(lock_file, 'w') as fd:
-            fcntl.lockf(fd.fileno(), control)
-
-
 def overriding(shared, config, override, logger):
     """Config overriding."""
     for key, value in shared.items():
@@ -549,15 +540,23 @@ def main():
                     # Creating the file if it doesn't exist
                     with open(lock_file, 'w+') as fd:
                         fd.write('')
+
+            fd = None
             try:
-                file_locking(logger, locking, lock_file, True)
+                if locking:
+                    logger.debug('performing lock operation')
+                    fd = open(lock_file, 'w')
+                    fcntl.lockf(fd.fileno(), fcntl.LOCK_EX)
 
                 # Critical section for messaging outputs
                 if not send_message(logger, messages, config_file, dry_run):
                     # Prevent writing out the 'latest' if this doesn't work
                     raise Exception("unable to report message out")
             finally:
-                file_locking(logger, locking, lock_file, False)
+                if locking and fd is not None:
+                    logger.debug('unlocking...')
+                    fcntl.lockf(fd.fileno(), fcntl.LOCK_UN)
+                    fd.close()
 
         if latest_message is not None:
             logger.info('new message detected')
