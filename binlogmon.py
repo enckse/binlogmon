@@ -191,7 +191,7 @@ class TwilioMessage(Message):
         self.token = config[AUTH_TOKEN_KEY]
         # NOTE: numbers must be 'verified'
         self.from_number = config[FROM_KEY]
-        check_parameter(self.method, config)
+        self._check_parameter(self.method, config)
         use_config = config[self.method]
         to_values = use_config[TO_KEY]
         self.to_numbers = set(to_values)
@@ -234,6 +234,11 @@ class TwilioMessage(Message):
     def _get_dry_run_message(self):
         raise Exception("base twilio _MUST_ support dry-run")
 
+    def _check_parameter(self, parameter, config):
+        """Check a parameter for twilio subsection."""
+        check_parameter(parameter, config, subsections=[TWILIO_SECTION,
+                                                        self.method])
+
 
 class TwilioCall(TwilioMessage):
     """Twilio phone calls."""
@@ -246,7 +251,7 @@ class TwilioCall(TwilioMessage):
         """Inherited from base."""
         self.method = CALL_KEY
         use_config = self._init(config, logger)
-        check_parameter(CALL_URL_KEY, use_config)
+        self._check_parameter(CALL_URL_KEY, use_config)
         self.call_url = use_config[CALL_URL_KEY]
         self.logger.debug('using url: %s' % self.call_url)
 
@@ -276,8 +281,8 @@ class TwilioSMS(TwilioMessage):
         """Inherited from base."""
         self.method = SMS_TO_KEY
         use_config = self._init(config, logger)
-        check_parameter(SMS_MESSAGE_KEY, use_config)
-        check_parameter(LONG_MESSAGE_KEY, use_config)
+        self._check_parameter(SMS_MESSAGE_KEY, use_config)
+        self._check_parameter(LONG_MESSAGE_KEY, use_config)
         long_message = use_config[LONG_MESSAGE_KEY]
         message_text = use_config[SMS_MESSAGE_KEY]
         self.short_message = TwilioSMS._format_message(message_text,
@@ -377,7 +382,7 @@ def send_message(logger, message_list, config, dry_run):
     return True
 
 
-def check_parameter(key, configuration, default=None):
+def check_parameter(key, configuration, default=None, subsections=None):
     """
     Check for parameters.
 
@@ -388,7 +393,11 @@ def check_parameter(key, configuration, default=None):
     """
     if key not in configuration:
         if default is None:
-            raise Exception("missing required configuration item: %s" % key)
+            message = "missing required configuration item: %s" % key
+            if subsections is not None and len(subsections) > 0:
+                subsection = ".".join(subsections)
+                message = "{0} (section: {1})".format(message, subsection)
+            raise Exception(message)
         else:
             configuration[key] = default
 
