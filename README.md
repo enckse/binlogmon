@@ -179,6 +179,6 @@ An example config file "example.json" is in the root, the breakdown is below
 * Example wrapper to manage and use the logging monitor, assuming:
     * Setup has been run and binlogmon is in $PATH
     * $NAME and $LOG_FILES are set
-    * Operating under a 'system' account in $HOME
+    * Operating under a 'system' account in $PWD
     * The config is called 'config-$NAME.json' in the named location
     * Logging will be done to a log-$NAME.log file

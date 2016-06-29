@@ -1,5 +1,5 @@
 #!/bin/bash
-LOCATION=$HOME/$NAME
+LOCATION=$PWD/$NAME
 PATH_TO_LOGS=$LOG_FILES
 
 # Share location of the log file, we'll copy it before doing any reading
