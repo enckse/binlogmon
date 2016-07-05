@@ -195,7 +195,7 @@ class TwilioMessage(Message):
         use_config = config[self.method]
         to_values = use_config[TO_KEY]
         self.to_numbers = set(to_values)
-        if len(self.to_numbers) != to_values:
+        if len(self.to_numbers) != len(to_values):
             logger.warn("duplicate numbers for messaging")
         self.client = None
         return use_config
