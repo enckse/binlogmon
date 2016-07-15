@@ -150,7 +150,12 @@ function run-test()
     if [ -z "$2" ]; then
         rm -f $LAST_JSON
     fi
-    result=$(binlogmon -f test.dat --config $(get-config-name $1) --dry-run)
+    execute-run $1 "-f test.dat"
+}
+
+function execute-run()
+{
+    result=$(binlogmon $2 --config $(get-config-name $1) --dry-run)
     echo "$result"
 }
 
@@ -256,6 +261,11 @@ save-config "$WHITELIST_FILE" $WHITELIST_CONFIG
 save-config "$WHITEANDBLACKLIST_FILE" $WHITEBLACK_CONFIG
 
 if [ $NORMAL_TESTS -eq 1 ]; then
+    echo "Message test..."
+    results=$(execute-run "$DEFAULT_CONFIG" "-t qfghii10913")
+    check-all-content "$results" "$NORMAL_MSG" "$URL"
+    normal-cache
+
     echo "Normal test..."
     results=$(run-test "$DEFAULT_CONFIG")
     check-all-content "$results" "$NORMAL_MSG" "$URL"
