@@ -423,6 +423,32 @@ def overriding(shared, config, override, logger):
     return config
 
 
+def _get_data_bytes(logger, file_name, test_data):
+    """Get the data to use for execution."""
+    if file_name is None and test_data is None:
+        print('a file or test value is required')
+        exit(-1)
+    if file_name is not None and test_data is not None:
+        print('only a file OR a test value can be passed')
+        exit(-1)
+    bytes = list()
+    if file_name is not None:
+        logger.info('reading file: %s' % file_name)
+        with open(file_name, 'rb') as f:
+            while True:
+                chunk = f.read(FILE_CHUNKSIZE)
+                if chunk:
+                    for b in chunk:
+                        bytes.append(b)
+                else:
+                    break
+    if test_data is not None:
+        logger.info("using test value: %s" % test_data)
+        for item in test_data.encode():
+            bytes.append(item)
+    return bytes
+
+
 def main():
     """
     Main entry point.
@@ -459,12 +485,6 @@ def main():
                             help='test processing a message',
                             default=None)
         args = parser.parse_args()
-        if args.file is None and args.test is None:
-            print('a file or test value is required')
-            exit(-1)
-        if args.file is not None and args.test is not None:
-            print('only a file OR a test value can be passed')
-            exit(-1)
         handler = logging.handlers.RotatingFileHandler(args.log,
                                                        maxBytes=10*1024*1024,
                                                        backupCount=10)
@@ -477,22 +497,7 @@ def main():
             logger.addHandler(console_handler)
 
         logger.info("script version %s" % VERSION_NUMBER)
-
-        bytes = list()
-        if args.file is not None:
-            logger.info('reading file: %s' % args.file)
-            with open(args.file, 'rb') as f:
-                while True:
-                    chunk = f.read(FILE_CHUNKSIZE)
-                    if chunk:
-                        for b in chunk:
-                            bytes.append(b)
-                    else:
-                        break
-        if args.test is not None:
-            logger.info("using test value: %s" % args.test)
-            for item in args.test.encode():
-                bytes.append(item)
+        bytes = _get_data_bytes(logger, args.file, args.test)
         config_file = None
         with open(args.config, 'r') as f:
             logger.debug('loading config')
