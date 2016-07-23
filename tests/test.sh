@@ -8,6 +8,7 @@
 
 # Ability to control what tests run via CLI args
 ARGS=$1
+RUN_TEST=1
 CACHE_TESTS=0
 FILTER_TESTS=0
 NORMAL_TESTS=0
@@ -15,28 +16,28 @@ OVERRIDE_TESTS=0
 TYPE_TESTS=0
 
 if [ -z "$ARGS" ]; then
-    CACHE_TESTS=1
-    FILTER_TESTS=1
-    NORMAL_TESTS=1
-    OVERRIDE_TESTS=1
-    TYPE_TESTS=1
+    CACHE_TESTS=$RUN_TEST
+    FILTER_TESTS=$RUN_TEST
+    NORMAL_TESTS=$RUN_TEST
+    OVERRIDE_TESTS=$RUN_TEST
+    TYPE_TESTS=$RUN_TEST
 else
     case $ARGS in
         "--filter")
-            FILTER_TESTS=1
+            FILTER_TESTS=$RUN_TEST
             ;;
         "--cache")
-            CACHE_TESTS=1
-            NORMAL_TESTS=1
+            CACHE_TESTS=$RUN_TEST
+            NORMAL_TESTS=$RUN_TEST
             ;;
         "--normal")
-            NORMAL_TESTS=1
+            NORMAL_TESTS=$RUN_TEST
             ;;
         "--override")
-            OVERRIDE_TESTS=1
+            OVERRIDE_TESTS=$RUN_TEST
             ;;
         "--types")
-            TYPE_TESTS=1
+            TYPE_TESTS=$RUN_TEST
             ;;
         *)
             echo "Unknown argument: $ARGS"
@@ -296,7 +297,7 @@ save-config "$WHITELIST_FILE" $WHITELIST_CONFIG
 save-config "$WHITEANDBLACKLIST_FILE" $WHITEBLACK_CONFIG
 save-config "$URL_FILE" $URL_CONFIG
 
-if [ $NORMAL_TESTS -eq 1 ]; then
+if [ $NORMAL_TESTS -eq $RUN_TEST ]; then
     echo "Message test..."
     results=$(execute-run "$DEFAULT_CONFIG" "-t qfghii10913")
     check-all-content "$results" "$NORMAL_MSG" "$URL"
@@ -319,7 +320,7 @@ if [ $NORMAL_TESTS -eq 1 ]; then
     normal-cache
 fi
 
-if [ $TYPE_TESTS -eq 1 ]; then
+if [ $TYPE_TESTS -eq $RUN_TEST ]; then
     echo "URL test..."
     results=$(run-test "$URL_CONFIG")
     check-all-content "$results" "$NORMAL_MSG" "$URL"
@@ -341,7 +342,7 @@ if [ $TYPE_TESTS -eq 1 ]; then
     normal-cache
 fi
 
-if [ $CACHE_TESTS -eq 1 ]; then
+if [ $CACHE_TESTS -eq $RUN_TEST ]; then
     echo "Cache test..."
     results=$(run-test "config" $RM_FILE)
     if [[ "$results" != "" ]]; then
@@ -357,7 +358,7 @@ if [ $CACHE_TESTS -eq 1 ]; then
     normal-cache
 fi
 
-if [ $FILTER_TESTS -eq 1 ]; then
+if [ $FILTER_TESTS -eq $RUN_TEST ]; then
     echo "Filter test..."
     results=$(run-test "$FILTER_CONFIG")
     check-all-content "$results" "$FILTER_CACHE_MSG$FILTER_ALL_LONG" "$URL"
@@ -380,7 +381,7 @@ if [ $FILTER_TESTS -eq 1 ]; then
     filter-cache
 fi
 
-if [ $OVERRIDE_TESTS -eq 1 ]; then
+if [ $OVERRIDE_TESTS -eq $RUN_TEST ]; then
     echo "Override test (normal)..."
     override-test "$NORMAL_FROM"
     
