@@ -170,6 +170,51 @@ class Message(object):
         """Get the output calls to make to send messages outward."""
         raise Exception("base class has _NO_ outputs")
 
+URL_URLS_KEY="urls"
+URL_URL_KEY="url"
+URL_KV_KEY="kv"
+URL_SECTION="post"
+URL_HEADER_KEY="headers"
+class URLPost(Message):
+    """Post the output message(s)."""
+
+    class URLPostRequest(object):
+        def __init__(self, url, kv,  headers):
+            self.url = url
+            self.kv = kv
+            self.headers = headers
+
+        def __str__(self):
+            return str([self.url, self.kv, self.headers])
+
+    def __init__(self):
+       self.urls = None
+
+    def initialize(self, message_list, config, logger):
+        self.logger = logger
+        self.urls = []
+        for item in config[URL_URLS_KEY]:
+            req = URLPost.URLPostRequest(item[URL_URL_KEY],
+                                         item[URL_KV_KEY],
+                                         item[URL_HEADER_KEY])
+            self.urls.append(req)
+        return config
+
+    def get_output_calls(self):
+        self.logger.info("posting to URL")
+        for item in self.urls:
+            def call(dry_run, obj, send_to):
+                if dry_run:
+                    print(str(obj))
+                else:
+                    import requests
+                    self.logger.info('posting...')
+                    res = requests.post(obj.url, data=obj.kv, headers=obj.headers)
+                    if res.status_code != 200:
+                        raise Exception("post error: {0} -> {1}".format(
+                            res.status_code,
+                            str(res)))
+            yield (item, 'posting', call, item)
 
 class TwilioMessage(Message):
     """Twilio-backed messaging."""
@@ -343,6 +388,11 @@ def send_message(logger, message_list, config, dry_run):
         if CALL_KEY in subsection:
             valid_method = True
             raw_methods.append((subsection, TwilioCall))
+
+    if URL_SECTION in config:
+        subsection = config[URL_SECTION]
+        valid_method = True
+        raw_methods.append((subsection, URLPost))
 
     if not valid_method:
         raise Exception("Not configured to message anyone...")

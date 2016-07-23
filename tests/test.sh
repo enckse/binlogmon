@@ -12,12 +12,14 @@ CACHE_TESTS=0
 FILTER_TESTS=0
 NORMAL_TESTS=0
 OVERRIDE_TESTS=0
+TYPE_TESTS=0
 
 if [ -z "$ARGS" ]; then
     CACHE_TESTS=1
     FILTER_TESTS=1
     NORMAL_TESTS=1
     OVERRIDE_TESTS=1
+    TYPE_TESTS=1
 else
     case $ARGS in
         "--filter")
@@ -32,6 +34,9 @@ else
             ;;
         "--override")
             OVERRIDE_TESTS=1
+            ;;
+        "--types")
+            TYPE_TESTS=1
             ;;
         *)
             echo "Unknown argument: $ARGS"
@@ -81,6 +86,9 @@ OVERRIDE_CONFIG="override"
 
 # Example config
 EXAMPLE_CONFIG="example"
+
+# URL config
+URL_CONFIG="url"
 
 function get-config-name()
 {
@@ -138,6 +146,33 @@ OVERRIDE_FILE="{
     \"override\": false,
     \"shared\": \"$(get-config-name $DEFAULT_CONFIG)\"
 }"
+
+URL_TEST="http://test/url"
+URL_TEST_P1="p1"
+URL_FILE=$(echo "$CONFIG_FILE" | head -n -1)",
+    \"post\":
+    {
+        \"urls\": 
+        [
+            {
+                \"url\": \"$URL_TEST\",
+                \"kv\":{
+                    \"$URL_TEST_P1\": \"xyz\",
+                    \"p2\": \"abc\"
+                },
+                \"headers\": {}
+            },
+            {
+                \"url\": \"$URL_TEST\",
+                \"kv\":{
+                    \"$URL_TEST_P1\": \"xyz\"
+                },
+                \"headers\": {\"h1\": \"x\", \"h2\": \"y\"}
+            }
+        ]
+    }
+}
+"
 
 EXAMPLE_FILE=$(cat ../example.json | sed "s/\/path\/to\/cache\/last\/detected\///g" | sed "s/\/path\/to\/file\/to\/lock/lock.json/g" | sed "s/\/path\/to\/a\/shared\/config.json//g")
 
@@ -259,6 +294,7 @@ save-config "$OVERRIDE_FILE" $OVERRIDE_CONFIG
 save-config "$EXAMPLE_FILE" $EXAMPLE_CONFIG
 save-config "$WHITELIST_FILE" $WHITELIST_CONFIG
 save-config "$WHITEANDBLACKLIST_FILE" $WHITEBLACK_CONFIG
+save-config "$URL_FILE" $URL_CONFIG
 
 if [ $NORMAL_TESTS -eq 1 ]; then
     echo "Message test..."
@@ -280,6 +316,28 @@ if [ $NORMAL_TESTS -eq 1 ]; then
     echo "Example test..."
     results=$(run-test "$EXAMPLE_CONFIG")
     check-all-content "$results" "$NORMAL_MSG" "$URL"
+    normal-cache
+fi
+
+if [ $TYPE_TESTS -eq 1 ]; then
+    echo "URL test..."
+    results=$(run-test "$URL_CONFIG")
+    check-all-content "$results" "$NORMAL_MSG" "$URL"
+    url_count=$(echo "$results" | grep "$URL_TEST" | grep "$URL_TEST_P1" | wc -l)
+    if [ $url_count -ne 2 ]; then
+        echo "FAILED - should have had 2 urls"
+        exit -1
+    fi
+    url_count=$(echo "$results" | grep "$URL_TEST" | grep "h1" | wc -l)
+    if [ $url_count -ne 1 ]; then
+        echo "FAILED - should have had headers in only one url"
+        exit -1
+    fi
+    url_count=$(echo "$results" | grep "$URL_TEST" | grep "p2" | wc -l)
+    if [ $url_count -ne 1 ]; then
+        echo "FAILED - should have had p2 in only one url"
+        exit -1
+    fi
     normal-cache
 fi
 
