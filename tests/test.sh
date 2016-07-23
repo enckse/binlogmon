@@ -95,6 +95,10 @@ URL_CONFIG="url"
 CONSOLE_CONFIG="console"
 CONSOLE_ONLY_CONFIG="console-only"
 
+# Testing commands
+FORCE_CMD="--force"
+CONSOLE_CMD="--console"
+
 function get-config-name()
 {
     echo ${CONFIG_PREFIX}$1${CONFIG_POSTFIX}
@@ -181,7 +185,6 @@ URL_FILE=$(echo "$CONFIG_FILE" | head -n -1)",
 }
 "
 
-CONSOLE_CMD="--console"
 CONSOLE_FILE=$(echo "$CONFIG_FILE" | head -n -1)",
     \"console\":{}
 }"
@@ -204,7 +207,9 @@ function run-test()
         if [[ "$2" == "$CONSOLE_CMD" ]]; then
             do_remove=0
         else
-            added_args=${@:3}
+            if [[ "$2" != "$FORCE_CMD" ]]; then
+                added_args=${@:3}
+            fi
         fi
     fi
     if [ $do_remove -eq 0 ]; then
@@ -332,6 +337,13 @@ if [ $NORMAL_TESTS -eq $RUN_TEST ]; then
 
     echo "Normal test..."
     results=$(run-test "$DEFAULT_CONFIG")
+    check-all-content "$results" "$NORMAL_MSG" "$URL"
+    normal-cache
+
+    echo "Normal test (force)..."
+    results=$(run-test "$DEFAULT_CONFIG")
+    check-all-content "$results" "$NORMAL_MSG" "$URL"
+    results=$(run-test "$DEFAULT_CONFIG" $FORCE_CMD)
     check-all-content "$results" "$NORMAL_MSG" "$URL"
     normal-cache
 

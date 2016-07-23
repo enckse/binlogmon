@@ -598,6 +598,10 @@ def main():
                             help='report to console',
                             action='store_true',
                             dest='console')
+        parser.add_argument('--force',
+                            help='force output, ignore cache',
+                            action='store_true',
+                            dest='force')
         args = parser.parse_args()
         handler = logging.handlers.RotatingFileHandler(args.log,
                                                        maxBytes=10*1024*1024,
@@ -649,7 +653,7 @@ def main():
         last_obj = None
         cache = config_file[CACHE_KEY]
         logger.debug('using cache: %s' % cache)
-        if os.path.exists(cache):
+        if os.path.exists(cache) and not args.force:
             with open(cache, 'r') as cache_file:
                 last_obj = json.loads(cache_file.read())
                 logger.info('reading cache in, object: ')
