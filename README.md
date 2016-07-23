@@ -131,6 +131,18 @@ An example config file "example.json" is in the root, the breakdown is below
 "headers": { "Content-Type": "application/json"}
 ```
 
+### Console subsection
+
+* The 'console' subsection is for output to console directly or in addition to other methods
+```
+"console": {}
+```
+
+* Alternatively (to putting it in the config) it can be enabled via the command line argument
+```
+binlogmon --console
+```
+
 
 ### Twilio subsection
 
