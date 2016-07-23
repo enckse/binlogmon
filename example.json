@@ -26,5 +26,20 @@
     },
     "lock": "/path/to/file/to/lock",
     "shared": "/path/to/a/shared/config.json",
-    "override": false
+    "override": false,
+    "post":
+    {
+        "urls": 
+        [
+            {
+                "url": "http://url/to/post/to",
+                "kv":{
+                    "any": "key",
+                    "id": "pairs"
+                },
+                "populate": { "key_value": "message" },
+                "headers": { "Content-Type": "application/json"}
+            }
+        ]
+    }
 }

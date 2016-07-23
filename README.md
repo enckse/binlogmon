@@ -93,6 +93,46 @@ An example config file "example.json" is in the root, the breakdown is below
     "filters":["test"]
 ```
 
+### URL subsection
+
+* The 'post' subsection is for posting messages to a URL/webservice/etc.
+```
+    "post":
+    {
+        "urls": 
+        [
+            {<url1 def>},
+            {<url2 def>},
+            {<url3 def>}
+        ]
+    }
+}
+```
+
+* The URL to post to 
+```
+"url": "http://url/to/post/to"
+```
+
+* Any key/value pairs to post data to
+```
+"kv":{
+    "any": "key",
+    "id": "pairs"
+}
+```
+
+* The method of populating the request with the message output (only 'key_value' is currently supported)
+```
+"populate": { "key_value": "message" }
+```
+
+* Additional headers to include
+```
+"headers": { "Content-Type": "application/json"}
+```
+
+
 ### Twilio subsection
 
 * The 'twilio' subsection is for messaging via twilio (call/sms/etc.)
