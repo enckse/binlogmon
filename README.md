@@ -106,7 +106,6 @@ An example config file "example.json" is in the root, the breakdown is below
             {<url3 def>}
         ]
     }
-}
 ```
 
 * The URL to post to 
