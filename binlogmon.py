@@ -47,6 +47,13 @@ AUTH_TOKEN_KEY = 'token'
 FROM_KEY = 'from'
 SMS_MESSAGE_KEY = "message"
 
+URL_URLS_KEY="urls"
+URL_URL_KEY="url"
+URL_KV_KEY="kv"
+URL_SECTION="post"
+URL_HEADER_KEY="headers"
+URL_POP_KEY = "populate"
+
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 OUT_DATE = '%Y-%m-%dT%H:%M:%S'
 FILE_CHUNKSIZE = 8192
@@ -170,52 +177,72 @@ class Message(object):
         """Get the output calls to make to send messages outward."""
         raise Exception("base class has _NO_ outputs")
 
-URL_URLS_KEY="urls"
-URL_URL_KEY="url"
-URL_KV_KEY="kv"
-URL_SECTION="post"
-URL_HEADER_KEY="headers"
 class URLPost(Message):
     """Post the output message(s)."""
 
     class URLPostRequest(object):
-        def __init__(self, url, kv,  headers):
+        def __init__(self, url, kv,  headers, populate):
             self.url = url
             self.kv = kv
-            self.headers = headers
+            self.headers = headers    
+            self.pop = populate
 
         def __str__(self):
             return str([self.url, self.kv, self.headers])
 
     def __init__(self):
-       self.urls = None
+        """Object init."""
+        self.urls = None
+        self.message = None
 
     def initialize(self, message_list, config, logger):
+        """Init the instance."""
         self.logger = logger
         self.urls = []
+        self.message = message_list
         for item in config[URL_URLS_KEY]:
+            populate_callback = None
+            pop_settings = item[URL_POP_KEY]
+            if len(pop_settings) == 1:
+                mtd, val = pop_settings.popitem()
+                if mtd == 'key_value':
+                    def kv_call(obj, message):
+                        obj.kv[val] = message
+                    populate_callback = kv_call
+                else:
+                    raise Exception("unknown population type %s" % mtd)
+            if populate_callback is None:
+                raise Exception('invalid or missing population callback')
             req = URLPost.URLPostRequest(item[URL_URL_KEY],
                                          item[URL_KV_KEY],
-                                         item[URL_HEADER_KEY])
+                                         item[URL_HEADER_KEY],
+                                         populate_callback)
             self.urls.append(req)
         return config
 
     def get_output_calls(self):
+        """Get output posting calls."""
         self.logger.info("posting to URL")
         for item in self.urls:
-            def call(dry_run, obj, send_to):
-                if dry_run:
-                    print(str(obj))
-                else:
-                    import requests
-                    self.logger.info('posting...')
-                    res = requests.post(obj.url, data=obj.kv, headers=obj.headers)
-                    self.logger.debug(str(res.text))
-                    if res.status_code != 200:
-                        raise Exception("post error: {0} -> {1}".format(
-                            res.status_code,
-                            str(res)))
-            yield (item, 'posting', call, item)
+            for msg in self.message:
+                def call(dry_run, obj, send_to):
+                    post_text = 'posting message -> %s' % obj
+                    if dry_run:
+                        print('{0} to {1}'.format(post_text, str(send_to)))
+                    else:
+                        import requests
+                        self.logger.info(post_text)
+                        send_to.pop(send_to, obj) 
+                        res = requests.post(send_to.url,
+                                            data=send_to.kv,
+                                            headers=send_to.headers)
+                        self.logger.debug(str(res.text))
+                        if res.status_code != 200:
+                            raise Exception("post error: {0} -> {1}".format(
+                                res.status_code,
+                                str(res)))
+                yield (item, 'posting', call, msg)
+
 
 class TwilioMessage(Message):
     """Twilio-backed messaging."""

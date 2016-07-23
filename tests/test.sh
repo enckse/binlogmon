@@ -161,6 +161,7 @@ URL_FILE=$(echo "$CONFIG_FILE" | head -n -1)",
                     \"$URL_TEST_P1\": \"xyz\",
                     \"p2\": \"abc\"
                 },
+                \"populate\":{\"key_value\":\"test\"},
                 \"headers\": {}
             },
             {
@@ -168,6 +169,7 @@ URL_FILE=$(echo "$CONFIG_FILE" | head -n -1)",
                 \"kv\":{
                     \"$URL_TEST_P1\": \"xyz\"
                 },
+                \"populate\":{\"key_value\":\"test\"},
                 \"headers\": {\"h1\": \"x\", \"h2\": \"y\"}
             }
         ]
@@ -325,17 +327,17 @@ if [ $TYPE_TESTS -eq $RUN_TEST ]; then
     results=$(run-test "$URL_CONFIG")
     check-all-content "$results" "$NORMAL_MSG" "$URL"
     url_count=$(echo "$results" | grep "$URL_TEST" | grep "$URL_TEST_P1" | wc -l)
-    if [ $url_count -ne 2 ]; then
+    if [ $url_count -ne 6 ]; then
         echo "FAILED - should have had 2 urls"
         exit -1
     fi
     url_count=$(echo "$results" | grep "$URL_TEST" | grep "h1" | wc -l)
-    if [ $url_count -ne 1 ]; then
+    if [ $url_count -ne 3 ]; then
         echo "FAILED - should have had headers in only one url"
         exit -1
     fi
     url_count=$(echo "$results" | grep "$URL_TEST" | grep "p2" | wc -l)
-    if [ $url_count -ne 1 ]; then
+    if [ $url_count -ne 3 ]; then
         echo "FAILED - should have had p2 in only one url"
         exit -1
     fi
