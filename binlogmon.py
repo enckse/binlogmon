@@ -54,6 +54,8 @@ URL_SECTION = "post"
 URL_HEADER_KEY = "headers"
 URL_POP_KEY = "populate"
 
+CONSOLE_SECTION = 'console'
+
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 OUT_DATE = '%Y-%m-%dT%H:%M:%S'
 FILE_CHUNKSIZE = 8192
@@ -177,6 +179,28 @@ class Message(object):
         """Get the output calls to make to send messages outward."""
         raise Exception("base class has _NO_ outputs")
 
+
+class ConsoleOut(Message):
+    """Console output."""
+
+    def __init__(self):
+        """Init the instance."""
+        self.set = None
+
+    def initialize(self, message_list, config, logger):
+        self.logger = logger
+        self.set = message_list
+        return config
+
+    def get_output_calls(self):
+        self.logger.info("console output starting...")
+        for message in self.set:
+            def call(dry_run, obj, send_to):
+                txt = obj
+                if dry_run:
+                    txt = "{0} (DRYRUN)".format(txt)
+                print(txt)
+            yield (self, 'console', call, message)
 
 class URLPost(Message):
     """Post the output message(s)."""
@@ -423,6 +447,10 @@ def send_message(logger, message_list, config, dry_run):
         valid_method = True
         raw_methods.append((subsection, URLPost))
 
+    if CONSOLE_SECTION in config:
+        valid_method = True
+        raw_methods.append((config[CONSOLE_SECTION], ConsoleOut))
+
     if not valid_method:
         raise Exception("Not configured to message anyone...")
 
@@ -563,6 +591,10 @@ def main():
         parser.add_argument('-t', '--test',
                             help='test processing a message',
                             default=None)
+        parser.add_argument('--console',
+                            help='report to console',
+                            action='store_true',
+                            dest='console')
         args = parser.parse_args()
         handler = logging.handlers.RotatingFileHandler(args.log,
                                                        maxBytes=10*1024*1024,
@@ -653,6 +685,8 @@ def main():
                     fcntl.lockf(fd.fileno(), fcntl.LOCK_EX)
 
                 # Critical section for messaging outputs
+                if args.console:
+                    config_file[CONSOLE_SECTION] = {}
                 if not send_message(logger, messages, config_file, dry_run):
                     # Prevent writing out the 'latest' if this doesn't work
                     raise Exception("unable to report message out")

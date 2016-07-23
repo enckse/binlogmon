@@ -91,6 +91,9 @@ EXAMPLE_CONFIG="example"
 # URL config
 URL_CONFIG="url"
 
+# Console config
+CONSOLE_CONFIG="console"
+
 function get-config-name()
 {
     echo ${CONFIG_PREFIX}$1${CONFIG_POSTFIX}
@@ -177,6 +180,11 @@ URL_FILE=$(echo "$CONFIG_FILE" | head -n -1)",
 }
 "
 
+CONSOLE_CMD="--console"
+CONSOLE_FILE=$(echo "$CONFIG_FILE" | head -n -1)",
+    \"console\":{}
+}"
+
 EXAMPLE_FILE=$(cat ../example.json | sed "s/\/path\/to\/cache\/last\/detected\///g" | sed "s/\/path\/to\/file\/to\/lock/lock.json/g" | sed "s/\/path\/to\/a\/shared\/config.json//g")
 
 PHONE_CONFIG=$(echo "$CONFIG_FILE" | sed "s/\"sms\"/\"other\"/g")
@@ -185,15 +193,27 @@ SMS_CONFIG=$(echo "$CONFIG_FILE" | sed "s/\"call\"/\"other\"/g")
 # Run tests (config to use, indicator to delete cache file)
 function run-test()
 {
+    do_remove=1
+    added_args=${@:2}
     if [ -z "$2" ]; then
+        do_remove=0
+    else
+        if [[ "$2" == "$CONSOLE_CMD" ]]; then
+            do_remove=0
+        else
+            added_args=${@:3}
+        fi
+    fi
+    if [ $do_remove -eq 0 ]; then
         rm -f $LAST_JSON
     fi
-    execute-run $1 "-f test.dat"
+
+    execute-run $1 "-f test.dat" $added_args
 }
 
 function execute-run()
 {
-    result=$(binlogmon $2 --config $(get-config-name $1) --dry-run)
+    result=$(binlogmon $2 --config $(get-config-name $1) --dry-run ${@:3})
     echo "$result"
 }
 
@@ -298,6 +318,7 @@ save-config "$EXAMPLE_FILE" $EXAMPLE_CONFIG
 save-config "$WHITELIST_FILE" $WHITELIST_CONFIG
 save-config "$WHITEANDBLACKLIST_FILE" $WHITEBLACK_CONFIG
 save-config "$URL_FILE" $URL_CONFIG
+save-config "$CONSOLE_FILE" $CONSOLE_CONFIG
 
 if [ $NORMAL_TESTS -eq $RUN_TEST ]; then
     echo "Message test..."
@@ -322,25 +343,45 @@ if [ $NORMAL_TESTS -eq $RUN_TEST ]; then
     normal-cache
 fi
 
+function console-test()
+{
+    check-all-content "$1" "$NORMAL_MSG" "$URL"
+    cli_count=$(echo "$1" | grep "(DRYRUN)" | wc -l)
+    if [ $cli_count -ne 3 ]; then
+        echo "FAILED - should have dryrun for each message output on CLI"
+        exit -1
+    fi
+}
+
 if [ $TYPE_TESTS -eq $RUN_TEST ]; then
     echo "URL test..."
     results=$(run-test "$URL_CONFIG")
     check-all-content "$results" "$NORMAL_MSG" "$URL"
     url_count=$(echo "$results" | grep "$URL_TEST" | grep "$URL_TEST_P1" | wc -l)
     if [ $url_count -ne 6 ]; then
-        echo "FAILED - should have had 2 urls"
+        echo "FAILED - should have had multiple urls"
         exit -1
     fi
     url_count=$(echo "$results" | grep "$URL_TEST" | grep "h1" | wc -l)
     if [ $url_count -ne 3 ]; then
-        echo "FAILED - should have had headers in only one url"
+        echo "FAILED - should have had headers in a url"
         exit -1
     fi
     url_count=$(echo "$results" | grep "$URL_TEST" | grep "p2" | wc -l)
     if [ $url_count -ne 3 ]; then
-        echo "FAILED - should have had p2 in only one url"
+        echo "FAILED - should have had p2 in a url"
         exit -1
     fi
+    normal-cache
+
+    echo "Console test..."
+    results=$(run-test "$CONSOLE_CONFIG")
+    console-test "$results"
+    normal-cache
+    
+    echo "Console (cli) test..."
+    results=$(run-test "$DEFAULT_CONFIG" $CONSOLE_CMD)
+    console-test "$results"
     normal-cache
 fi
 
