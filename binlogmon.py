@@ -47,11 +47,11 @@ AUTH_TOKEN_KEY = 'token'
 FROM_KEY = 'from'
 SMS_MESSAGE_KEY = "message"
 
-URL_URLS_KEY="urls"
-URL_URL_KEY="url"
-URL_KV_KEY="kv"
-URL_SECTION="post"
-URL_HEADER_KEY="headers"
+URL_URLS_KEY = "urls"
+URL_URL_KEY = "url"
+URL_KV_KEY = "kv"
+URL_SECTION = "post"
+URL_HEADER_KEY = "headers"
 URL_POP_KEY = "populate"
 
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
@@ -177,6 +177,7 @@ class Message(object):
         """Get the output calls to make to send messages outward."""
         raise Exception("base class has _NO_ outputs")
 
+
 class URLPost(Message):
     """Post the output message(s)."""
 
@@ -184,7 +185,7 @@ class URLPost(Message):
         def __init__(self, url, kv,  headers, populate):
             self.url = url
             self.kv = kv
-            self.headers = headers    
+            self.headers = headers
             self.pop = populate
 
         def __str__(self):
@@ -232,7 +233,7 @@ class URLPost(Message):
                     else:
                         import requests
                         self.logger.info(post_text)
-                        send_to.pop(send_to, obj) 
+                        send_to.pop(send_to, obj)
                         res = requests.post(send_to.url,
                                             data=send_to.kv,
                                             headers=send_to.headers)
