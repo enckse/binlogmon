@@ -210,6 +210,7 @@ class URLPost(Message):
                     import requests
                     self.logger.info('posting...')
                     res = requests.post(obj.url, data=obj.kv, headers=obj.headers)
+                    self.logger.debug(str(res.text))
                     if res.status_code != 200:
                         raise Exception("post error: {0} -> {1}".format(
                             res.status_code,
