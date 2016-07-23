@@ -93,6 +93,7 @@ URL_CONFIG="url"
 
 # Console config
 CONSOLE_CONFIG="console"
+CONSOLE_ONLY_CONFIG="console-only"
 
 function get-config-name()
 {
@@ -184,6 +185,8 @@ CONSOLE_CMD="--console"
 CONSOLE_FILE=$(echo "$CONFIG_FILE" | head -n -1)",
     \"console\":{}
 }"
+
+CONSOLE_ONLY="{"$(echo "$CONFIG_FILE" | tail -n -7)
 
 EXAMPLE_FILE=$(cat ../example.json | sed "s/\/path\/to\/cache\/last\/detected\///g" | sed "s/\/path\/to\/file\/to\/lock/lock.json/g" | sed "s/\/path\/to\/a\/shared\/config.json//g")
 
@@ -319,6 +322,7 @@ save-config "$WHITELIST_FILE" $WHITELIST_CONFIG
 save-config "$WHITEANDBLACKLIST_FILE" $WHITEBLACK_CONFIG
 save-config "$URL_FILE" $URL_CONFIG
 save-config "$CONSOLE_FILE" $CONSOLE_CONFIG
+save-config "$CONSOLE_ONLY" $CONSOLE_ONLY_CONFIG
 
 if [ $NORMAL_TESTS -eq $RUN_TEST ]; then
     echo "Message test..."
@@ -345,7 +349,9 @@ fi
 
 function console-test()
 {
-    check-all-content "$1" "$NORMAL_MSG" "$URL"
+    if [ -z "$2" ]; then
+        check-all-content "$1" "$NORMAL_MSG" "$URL"
+    fi
     cli_count=$(echo "$1" | grep "(DRYRUN)" | wc -l)
     if [ $cli_count -ne 3 ]; then
         echo "FAILED - should have dryrun for each message output on CLI"
@@ -382,6 +388,11 @@ if [ $TYPE_TESTS -eq $RUN_TEST ]; then
     echo "Console (cli) test..."
     results=$(run-test "$DEFAULT_CONFIG" $CONSOLE_CMD)
     console-test "$results"
+    normal-cache
+    
+    echo "Console (only) test..."
+    results=$(run-test "$CONSOLE_ONLY_CONFIG" $CONSOLE_CMD)
+    console-test "$results" "only"
     normal-cache
 fi
 
