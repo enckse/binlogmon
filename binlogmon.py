@@ -188,11 +188,13 @@ class ConsoleOut(Message):
         self.set = None
 
     def initialize(self, message_list, config, logger):
+        """Initialize the instance."""
         self.logger = logger
         self.set = message_list
         return config
 
     def get_output_calls(self):
+        """Get output messaging."""
         self.logger.info("console output starting...")
         for message in self.set:
             def call(dry_run, obj, send_to):
@@ -201,6 +203,7 @@ class ConsoleOut(Message):
                     txt = "{0} (DRYRUN)".format(txt)
                 print(txt)
             yield (self, 'console', call, message)
+
 
 class URLPost(Message):
     """Post the output message(s)."""
